@@ -1,0 +1,194 @@
+/* Reset e Estilos Globais */
+:root {
+  --background-color: #E6FFFA; /* Tom de verde-água/ciano bem claro */
+  --primary-color: #00796B;    /* Tom de verde-água escuro (para ícones e botões) */
+  --text-color: #333;
+  --card-bg: #FFFFFF;
+  --border-color: #B2DFDB;   /* Borda sutil */
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Alinha no topo */
+  min-height: 100vh;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+#root {
+  width: 100%;
+}
+
+h1, h2, h3, p {
+  margin: 0;
+}
+
+/* Container Principal */
+.container {
+  width: 100%;
+  max-width: 800px; /* Largura máxima para o conteúdo */
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+/* Link de Voltar */
+.back-link {
+  align-self: flex-start;
+  text-decoration: none;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.back-link:hover {
+  color: var(--primary-color);
+}
+
+/* Cabeçalho (Logo e Títulos) */
+.header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo-icon {
+  font-size: 3rem; /* Tamanho do ícone de cérebro */
+  color: var(--primary-color);
+  background-color: var(--card-bg);
+  border-radius: 50%;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.header h1 {
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.header p {
+  font-size: 1rem;
+  color: #555;
+}
+
+/* TELA 1: Seleção de Cards */
+.selection-container {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  width: 100%;
+}
+
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 2rem;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
+  color: var(--text-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 121, 107, 0.15); /* Sombra na cor primária */
+}
+
+.card-icon {
+  font-size: 4rem; /* Tamanho dos ícones nos cards */
+  color: var(--primary-color);
+}
+
+.card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* TELA 2: Formulário */
+.form-container {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 700px; /* Largura do box branco */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-color);
+}
+
+.form-container h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.form-subtitle {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Duas colunas */
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box; /* Garante que o padding não estoure a largura */
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 121, 107, 0.2);
+}
+
+.submit-button {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--card-bg);
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 2rem;
+  transition: background-color 0.2s ease;
+}
+
+.submit-button:hover {
+  background-color: #004D40; /* Tom mais escuro no hover */
+}
