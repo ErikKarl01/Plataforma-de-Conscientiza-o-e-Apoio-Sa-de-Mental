@@ -1,12 +1,13 @@
 from flask import Flask, request, jsonify
 import json
 import os
+from flask_cors import CORS # Importar o CORS
 
 app = Flask(__name__)
+CORS(app) # Habilitar o CORS
 
-if not os.path.exists('backend/data/usuarios.json'):
-    with open('backend/data/usuarios.json', 'w') as f:
-        json.dump([], f)
+with open('backend/banco.json', 'w') as f:
+    json.dump([], f)
 
 class Usuario:
     nome: str
@@ -33,15 +34,15 @@ class Usuario:
         
         novo_usuario = {'nome': self.nome, 'email': self.email, 'senha': self.senha, 'telefone': self.telefone, 'crp': self.crp}
         
-        with open('backend/data/usuarios.json', 'r') as f:
+        with open('backend/banco.json', 'r') as f:
             dados = json.load(f)
             
         dados.append(novo_usuario)
         
-        with open('backend/data/usuarios.json', 'w') as f:
+        with open('backend/banco.json', 'w') as f:
             json.dump(dados, f)
             
-        return jsonify({'mensagem': 'Usuário salvo comsucesso', 'usuario': novo_usuario})
+        return jsonify({'mensagem': 'Usuário salvo comsucesso', 'banco': novo_usuario})
     
     
 @app.route('/cadastrar', methods=['POST'])

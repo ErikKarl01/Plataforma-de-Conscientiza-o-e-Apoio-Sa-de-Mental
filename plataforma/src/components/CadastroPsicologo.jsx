@@ -31,7 +31,7 @@ function CadastroPsicologo() {
     try {
       const dataToSend = { nome, crp, email, telefone, senha };
         //colocar link da api/back 
-      const response = await fetch('https://sua-api.com/cadastro/psicologo', {
+      const response = await fetch('http://127.0.0.1:5000/cadastrar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
