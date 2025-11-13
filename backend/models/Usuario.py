@@ -8,21 +8,24 @@ CORS(app) # Habilitar o CORS
 
 with open('backend/banco.json', 'w') as f:
     json.dump([], f)
+        
 
 class Usuario:
+    id: str
     nome: str
     email: str
     senha: str
     telefone: str
-    crp: str
     
-    def __init__(self, nome: str, email: str, senha: str, telefone: str, crp: str):
+    def __init__(self, nome: str, email: str, senha: str, telefone: str):
         self.nome = nome
         self.email = email
         self.senha = senha
         self.telefone = telefone
-        self.crp = crp
         
+    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
+    #Esse método cadastra um usuário 
+    @staticmethod 
     def cadastrar(self):
         dados_do_front = request.get_json()
         
@@ -37,6 +40,8 @@ class Usuario:
         with open('backend/banco.json', 'r') as f:
             dados = json.load(f)
             
+        self.id = len(dados) + 1
+        novo_usuario['id'] = self.id    
         dados.append(novo_usuario)
         
         with open('backend/banco.json', 'w') as f:
@@ -47,7 +52,7 @@ class Usuario:
     
 @app.route('/cadastrar', methods=['POST'])
 def cadastrar_usuario():
-    usuario = Usuario('', '', '', '', '')
+    usuario = Usuario()
     return usuario.cadastrar()
 
 
