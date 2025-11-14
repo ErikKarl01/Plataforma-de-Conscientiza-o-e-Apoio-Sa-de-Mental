@@ -174,7 +174,7 @@ class Psicologo:
     #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
     #Esse método adiciona um pacinente a um horário
     @staticmethod
-    def _get_consultas_do_psicologo(id_psicologo):
+    def get_consultas_do_psicologo(id_psicologo):
         dados_completos = carregar_dados(CONSULTAS_DB)
         
         dados_filtrados = []

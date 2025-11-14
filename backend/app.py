@@ -10,7 +10,6 @@ from models.Login import Login
 app = Flask(__name__)
 
 # 2. Garante que TODOS os diretórios de dados existam
-# (Você não precisa das variáveis DB aqui, só do path)
 os.makedirs('backend/data', exist_ok=True)
 
 # --- Rotas de Login ---

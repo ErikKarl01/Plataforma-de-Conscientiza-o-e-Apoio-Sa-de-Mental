@@ -3,8 +3,17 @@ import json
 # CORREÇÃO 1: Importação relativa (com o '.') para funcionar com o app.py
 from .CarregarDados import carregar_dados
 from werkzeug.security import generate_password_hash
+from .Psicologo import pesquisaDataHorario, Psicologo
 
 ESTUDANTE_DB = 'backend/data/estudante.json'
+CONSULTAS_DB = 'backend/data/consultas.json'
+PSICOLOGO_DB = 'backend/data/psicologos.json'
+
+def pesquisarPsicologoPorNomeEmail(dadosBanco, nome, email):
+    for dado in dadosBanco:
+        if dado['nome'] == nome and dado['email'] == email:
+            return dado
+    return None
 
 def pesquisaEstudante(dados, id):
     for index, estudante in enumerate(dados):
@@ -92,3 +101,46 @@ class Estudante:
             json.dump(dados, f)
             
         return jsonify({'mensagem': 'Estudante excluído com sucesso', 'estudante': estudante})
+    
+    @staticmethod
+    def pesquisarDataHorarioLivres():
+        dados_do_front = request.get_json()
+        
+        nome = dados_do_front.get('nome')
+        email = dados_do_front.get('email')
+        
+        dados = carregar_dados(PSICOLOGO_DB)
+        psicologo = pesquisarPsicologoPorNomeEmail(dados, nome, email)
+        
+        if not psicologo:
+            return jsonify({'mensagem': 'Psicólogo não encontrado'}) 
+        
+        horariosLivres = Psicologo.get_consultas_do_psicologo(psicologo['id'])
+        
+        return jsonify(horariosLivres)
+    
+    @staticmethod
+    def selecionarDataHorario():
+        dados_do_front = request.get_json()
+        
+        nome = dados_do_front.get('nome')
+        telefone = dados_do_front.get('telefone')
+        data = dados_do_front.get('data')
+        horario = dados_do_front.get('horario')
+        
+        dados = carregar_dados(CONSULTAS_DB)
+        
+        index, dataHorarioEscolhido = pesquisaDataHorario(dados, data, horario)
+        
+        if not dataHorarioEscolhido:
+            return jsonify({'mensagem': 'Data/Horário não encontrados'})
+        
+        dados[index]['reservado'] = True 
+        dados[index]['nomePaciente'] = nome
+        dados[index]['telPaciente'] = telefone
+        
+        with open(CONSULTAS_DB, 'w') as f:
+            json.dump(dados, f)
+        
+        return jsonify({'mensagem': 'Data/Horário reservados com sucesso'})
+    
