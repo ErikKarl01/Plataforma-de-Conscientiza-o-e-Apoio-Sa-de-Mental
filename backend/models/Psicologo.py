@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import json
 import os
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
@@ -51,7 +52,8 @@ class Psicologo:
         telefone = dados_do_front.get('telefone')
         crp = dados_do_front.get('crp')
         
-        novo_usuario = {'nome': nome, 'email': email, 'senha': senha, 'telefone': telefone, 'crp': crp}
+        novo_usuario = {'nome': nome, 'email': email, 'telefone': telefone, 'crp': crp}
+        novo_usuario['senha'] = generate_password_hash(senha)
         
         dados = carregar_dados(USUARIOS_DB)
             
@@ -90,6 +92,8 @@ class Psicologo:
             
         return jsonify({'mensagem': 'Consulta cadastrada com sucesso', 'consulta': novaConsulta})
     
+    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
+    #Esse método edita data e horário
     @staticmethod
     def editarHorario():
         dados_do_front = request.get_json()
@@ -114,6 +118,8 @@ class Psicologo:
                     
         return jsonify({'mensagem': 'Data e horário não encontrados'})
     
+    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
+    #Esse método excluir uma consulta
     @staticmethod
     def excluirHorario():
         dados_do_front = request.get_json()
@@ -133,6 +139,8 @@ class Psicologo:
                     
         return jsonify({'mensagem': 'Data e horário não encontrados'})
     
+    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
+    #Esse método muda a disponibilidade da reserva para um psicólogo
     @staticmethod
     def editarReserva():
         dados_do_front = request.get_json()
@@ -154,25 +162,56 @@ class Psicologo:
         return jsonify({'mensagem': 'Data e horário não encontrados'}) 
     
     @staticmethod
-    def listarConsultas():
-        dados_do_front = request.get_json()
-
-        if not dados_do_front or 'idPsicologo' not in dados_do_front:
-            return jsonify({"erro": "idPsicologo não fornecido no corpo"}), 400
-            
-        try:
-            id_psicologo = int(dados_do_front.get('idPsicologo'))
-        except (ValueError, TypeError):
-            return jsonify({"erro": "ID inválido"}), 400
-
+    def _get_consultas_do_psicologo(id_psicologo):
         dados_completos = carregar_dados(CONSULTAS_DB)
+        
         dados_filtrados = []
         for consulta in dados_completos:
             if consulta.get('idPsicologo') == id_psicologo:
                 dados_filtrados.append(consulta)
                 
         dados_ordenados = sorted(dados_filtrados, key=chaveDeOrdenacao)
-        return jsonify(dados_ordenados)
+        return dados_ordenados
+
+    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
+    #Esse método lista todas as consultas
+    @staticmethod
+    def listarConsultas():
+        dados_do_front = request.get_json()
+        if not dados_do_front or 'idPsicologo' not in dados_do_front:
+            return jsonify({"erro": "idPsicologo não fornecido"}), 400
+        try:
+            id_psicologo = int(dados_do_front.get('idPsicologo'))
+        except (ValueError, TypeError):
+            return jsonify({"erro": "ID inválido"}), 400
+
+        todosOsHorarios = Psicologo._get_consultas_do_psicologo(id_psicologo)
+        
+        horariosReservados = []
+        for horario in todosOsHorarios:
+            if horario.get('reservado'):
+                horariosReservados.append(horario)
+                
+        return jsonify(horariosReservados)
+    
+    @staticmethod
+    def listarHorariosLivres():
+        dados_do_front = request.get_json()
+        if not dados_do_front or 'idPsicologo' not in dados_do_front:
+            return jsonify({"erro": "idPsicologo não fornecido"}), 400
+        try:
+            id_psicologo = int(dados_do_front.get('idPsicologo'))
+        except (ValueError, TypeError):
+            return jsonify({"erro": "ID inválido"}), 400
+
+        todosOsHorarios = Psicologo._get_consultas_do_psicologo(id_psicologo)
+        
+        horariosLivres = []
+        for horario in todosOsHorarios:
+            if not horario.get('reservado'):
+                horariosLivres.append(horario)
+                
+        return jsonify(horariosLivres)
             
 
 @app.route('/cadastrar', methods=['POST'])
@@ -198,6 +237,10 @@ def editar_reserva():
 @app.route('/listarConsultas', methods=['POST'])
 def listar_consultas():
     return Psicologo.listarConsultas()
+
+@app.route('/listarHorariosLivre', methods=['POST'])
+def listar_horarios_livres():
+    return Psicologo.listarHorariosLivres()
 
 
 if __name__ == '__main__':

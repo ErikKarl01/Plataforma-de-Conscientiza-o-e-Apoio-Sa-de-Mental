@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import json
 import os
 from Psicologo import carregar_dados
+from werkzeug.security import generate_password_hash
 
 app = Flask(__name__)
 
@@ -23,7 +24,8 @@ class Estudante:
         senha = dados_do_front.get('senha')
         telefone = dados_do_front.get('telefone')
         
-        novo_usuario = {'nome': nome, 'email': email, 'senha': senha, 'telefone': telefone}
+        novo_usuario = {'nome': nome, 'email': email, 'telefone': telefone}
+        novo_usuario['senha'] = generate_password_hash(senha)
         
         dados = carregar_dados(ESTUDANTE_DB)
             
