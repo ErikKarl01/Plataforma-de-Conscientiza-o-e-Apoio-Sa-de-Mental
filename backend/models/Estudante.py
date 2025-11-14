@@ -1,10 +1,7 @@
-from flask import Flask, request, jsonify
+from flask import request, jsonify
 import json
-import os
-from Psicologo import carregar_dados
+from .Psicologo import carregar_dados 
 from werkzeug.security import generate_password_hash
-
-app = Flask(__name__)
 
 ESTUDANTE_DB = 'backend/data/estudante.json'
 
@@ -25,12 +22,12 @@ class Estudante:
         telefone = dados_do_front.get('telefone')
         
         novo_usuario = {'nome': nome, 'email': email, 'telefone': telefone}
-        novo_usuario['senha'] = generate_password_hash(senha)
+        novo_usuario['senha'] = generate_password_hash(senha) 
         
         dados = carregar_dados(ESTUDANTE_DB)
             
         novo_id = (max((u.get('id', -1) for u in dados), default=-1) + 1)
-        novo_usuario['id'] = novo_id  
+        novo_usuario['id'] = novo_id 
         dados.append(novo_usuario)
         
         with open(ESTUDANTE_DB, 'w') as f:
@@ -44,7 +41,6 @@ class Estudante:
         
         nome = dados_do_front.get('nome')
         email = dados_do_front.get('email')
-        senha = dados_do_front.get('senha')
         telefone = dados_do_front.get('telefone')
         
         if not dados_do_front or 'id' not in dados_do_front:
@@ -64,13 +60,12 @@ class Estudante:
         estudante['nome'] = nome
         estudante['email'] = email
         estudante['telefone'] = telefone
-        estudante['senha'] = senha
         
         dados[index] = estudante
         with open(ESTUDANTE_DB, 'w') as f:
             json.dump(dados, f)
             
-        return jsonify({'mensagem': 'Estudasnte modificado com sucesso', 'estudante': estudante})
+        return jsonify({'mensagem': 'Estudante modificado com sucesso', 'estudante': estudante})
     
     @staticmethod
     def excluirEstudante():
@@ -96,16 +91,3 @@ class Estudante:
             json.dump(dados, f)
             
         return jsonify({'mensagem': 'Estudante excluído com sucesso', 'estudante': estudante})
-    
-    
-@app.route('/cadastrar_estudante', methods=['POST'])
-def cadastrar_estudante():
-    return Estudante.cadastrar()
-
-@app.route('/editar_estudante', methods=['POST'])
-def editar_estudante():  # <- Corrigido
-    return Estudante.editarEstudante()
-        
-@app.route('/excluir_estudante', methods=['POST'])
-def excluir_estudante():  # <- Corrigido
-    return Estudante.excluirEstudante()

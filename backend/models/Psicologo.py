@@ -1,33 +1,13 @@
-from flask import Flask, request, jsonify
+from flask import request, jsonify
 import json
 import os
 from datetime import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
+from .CarregarDados import carregar_dados
 
-app = Flask(__name__)
-
-USUARIOS_DB = 'backend/data/psicologos.json'
+PSICOLOGO_DB = 'backend/data/psicologos.json'
 CONSULTAS_DB = 'backend/data/consultas.json'
 
-os.makedirs(os.path.dirname(USUARIOS_DB), exist_ok=True)
-
-def carregar_dados(caminho_arquivo):
-    """
-    Função auxiliar para carregar dados de um arquivo JSON com segurança.
-    Cria o arquivo se não existir e trata arquivos vazios ou corrompidos.
-    """
-    if not os.path.exists(caminho_arquivo) or os.path.getsize(caminho_arquivo) == 0:
-        with open(caminho_arquivo, 'w') as f:
-            json.dump([], f)
-        return []
-    
-    try:
-        with open(caminho_arquivo, 'r') as f:
-            return json.load(f)
-    except json.JSONDecodeError:
-        print(f"AVISO: O arquivo {caminho_arquivo} estava corrompido. Iniciando com dados limpos.")
-        return []
-        
 def pesquisaDataHorario(dados, data, horarioDoFront):
     for indice, consulta in enumerate(dados):
             if consulta['data'] == data and consulta['horario'] == horarioDoFront:
@@ -55,13 +35,13 @@ class Psicologo:
         novo_usuario = {'nome': nome, 'email': email, 'telefone': telefone, 'crp': crp}
         novo_usuario['senha'] = generate_password_hash(senha)
         
-        dados = carregar_dados(USUARIOS_DB)
+        dados = carregar_dados(PSICOLOGO_DB)
             
         novo_id = (max((u.get('id', -1) for u in dados), default=-1) + 1)
         novo_usuario['id'] = novo_id  
         dados.append(novo_usuario)
         
-        with open(USUARIOS_DB, 'w') as f:
+        with open(PSICOLOGO_DB, 'w') as f:
             json.dump(dados, f)
             
         return jsonify({'mensagem': 'Usuário salvo com sucesso', 'usuario': novo_usuario})
@@ -69,16 +49,17 @@ class Psicologo:
     #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
     #Esse método permite o psicólogo marcar uma consulta
     @staticmethod
-    def adicionarConsulta ():
+    def adicionarHorario ():
         dados_do_front = request.get_json()
         
-        nomeDoPaciente = dados_do_front.get('nomePaciente')
         dataConsulta = dados_do_front.get('data')
         horarioConsulta = dados_do_front.get('horario')
         idPsicologo = dados_do_front.get('idPsicologo')
+        nome = ''
+        numeroPaciente = ''
         reservado = False
         
-        novaConsulta = {'nomePaciente': nomeDoPaciente, 'data': dataConsulta, 'horario': horarioConsulta,
+        novaConsulta = {'nomePaciente': nome, 'telPaciente': numeroPaciente,  'data': dataConsulta, 'horario': horarioConsulta,
         'idPsicologo': idPsicologo, 'reservado': reservado}
         
         dados = carregar_dados(CONSULTAS_DB)
@@ -91,6 +72,32 @@ class Psicologo:
             json.dump(dados, f)
             
         return jsonify({'mensagem': 'Consulta cadastrada com sucesso', 'consulta': novaConsulta})
+    
+    @staticmethod
+    def marcarConsulta():
+        dados_do_front = request.get_json()
+        
+        data = dados_do_front.get('data')
+        horarioDoFront = dados_do_front.get('horario')
+        
+        nomePaciente = dados_do_front.get('nomePaciente')
+        telPaciente = dados_do_front.get('telPaciente')
+        
+        dados = carregar_dados(CONSULTAS_DB)
+        
+        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront)
+        
+        if consulta:
+            consulta['nomePaciente'] = nomePaciente
+            consulta['telPaciente'] = telPaciente
+            consulta['reservado'] = True 
+            dados[indice] = consulta
+            with open(CONSULTAS_DB, 'w') as f:
+                json.dump(dados, f)
+            return jsonify({'mensagem': 'Horário cadastrado com sucesso', 'consulta': consulta}) 
+                    
+        return jsonify({'mensagem': 'Data e horário não encontrados'})
+        
     
     #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
     #Esse método edita data e horário
@@ -161,6 +168,8 @@ class Psicologo:
                     
         return jsonify({'mensagem': 'Data e horário não encontrados'}) 
     
+    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
+    #Esse método adiciona um pacinente a um horário
     @staticmethod
     def _get_consultas_do_psicologo(id_psicologo):
         dados_completos = carregar_dados(CONSULTAS_DB)
@@ -194,6 +203,8 @@ class Psicologo:
                 
         return jsonify(horariosReservados)
     
+    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
+    #Esse método lista todos os horarios livres
     @staticmethod
     def listarHorariosLivres():
         dados_do_front = request.get_json()
@@ -212,36 +223,3 @@ class Psicologo:
                 horariosLivres.append(horario)
                 
         return jsonify(horariosLivres)
-            
-
-@app.route('/cadastrar', methods=['POST'])
-def cadastrar_psicologo():
-    return Psicologo.cadastrarPsicologo()
-
-@app.route('/adicionarConsulta', methods=['POST'])
-def marcar_consulta():
-    return Psicologo.adicionarConsulta()
-
-@app.route('/modificarConsulta', methods=['POST'])
-def editar_horario():
-    return Psicologo.editarHorario()
-
-@app.route('/removerConsulta', methods=['POST'])
-def excluir_horario():
-    return Psicologo.excluirHorario()
-
-@app.route('/editarReserva', methods=['POST'])
-def editar_reserva():
-    return Psicologo.editarReserva()
-
-@app.route('/listarConsultas', methods=['POST'])
-def listar_consultas():
-    return Psicologo.listarConsultas()
-
-@app.route('/listarHorariosLivre', methods=['POST'])
-def listar_horarios_livres():
-    return Psicologo.listarHorariosLivres()
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
