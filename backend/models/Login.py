@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from .Psicologo import carregar_dados 
+from .CarregarDados import carregar_dados
 from werkzeug.security import check_password_hash
 
 PSICOLOGO_DB = 'backend/data/psicologos.json'
