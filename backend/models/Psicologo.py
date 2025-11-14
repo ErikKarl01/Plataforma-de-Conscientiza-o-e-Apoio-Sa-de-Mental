@@ -5,7 +5,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-USUARIOS_DB = 'backend/data/usuarios.json'
+USUARIOS_DB = 'backend/data/psicologos.json'
 CONSULTAS_DB = 'backend/data/consultas.json'
 
 os.makedirs(os.path.dirname(USUARIOS_DB), exist_ok=True)
@@ -195,7 +195,6 @@ def excluir_horario():
 def editar_reserva():
     return Psicologo.editarReserva()
 
-# CORREÇÃO: Rota alterada para 'POST' para aceitar o ID no corpo.
 @app.route('/listarConsultas', methods=['POST'])
 def listar_consultas():
     return Psicologo.listarConsultas()
