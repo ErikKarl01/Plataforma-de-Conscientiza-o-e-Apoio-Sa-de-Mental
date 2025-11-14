@@ -1,20 +1,68 @@
-from Usuario import Usuario
 from flask import Flask, request, jsonify
 import json
 import os
+from datetime import datetime
 
 app = Flask(__name__)
-        
-if not os.path.exists('backend/data/consultas.json'):
-    with open('backend/data/consultas.json', 'w') as f:
-        json.dump([], f)
 
-class Psicologo(Usuario):
-    crp: str
+USUARIOS_DB = 'backend/data/usuarios.json'
+CONSULTAS_DB = 'backend/data/consultas.json'
+
+os.makedirs(os.path.dirname(USUARIOS_DB), exist_ok=True)
+
+def carregar_dados(caminho_arquivo):
+    """
+    Função auxiliar para carregar dados de um arquivo JSON com segurança.
+    Cria o arquivo se não existir e trata arquivos vazios ou corrompidos.
+    """
+    if not os.path.exists(caminho_arquivo) or os.path.getsize(caminho_arquivo) == 0:
+        with open(caminho_arquivo, 'w') as f:
+            json.dump([], f)
+        return []
     
-    def __init__(self, nome, email, senha, telefone, crp):
-        super().__init__(nome, email, senha, telefone)
-        self.crp = crp
+    try:
+        with open(caminho_arquivo, 'r') as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        print(f"AVISO: O arquivo {caminho_arquivo} estava corrompido. Iniciando com dados limpos.")
+        return []
+        
+def pesquisaDataHorario(dados, data, horarioDoFront):
+    for indice, consulta in enumerate(dados):
+            if consulta['data'] == data and consulta['horario'] == horarioDoFront:
+                return indice, consulta
+    return (None, None) 
+
+def chaveDeOrdenacao(consulta): 
+    string_completa = consulta['data'] + ' ' + consulta['horario']
+    return datetime.strptime(string_completa, '%d/%m/%Y %H:%M')
+
+
+class Psicologo:
+    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
+    #Esse método cadastra um usuário 
+    @staticmethod 
+    def cadastrarPsicologo():
+        dados_do_front = request.get_json()
+        
+        nome = dados_do_front.get('nome')
+        email = dados_do_front.get('email')
+        senha = dados_do_front.get('senha')
+        telefone = dados_do_front.get('telefone')
+        crp = dados_do_front.get('crp')
+        
+        novo_usuario = {'nome': nome, 'email': email, 'senha': senha, 'telefone': telefone, 'crp': crp}
+        
+        dados = carregar_dados(USUARIOS_DB)
+            
+        novo_id = (max((u.get('id', -1) for u in dados), default=-1) + 1)
+        novo_usuario['id'] = novo_id  
+        dados.append(novo_usuario)
+        
+        with open(USUARIOS_DB, 'w') as f:
+            json.dump(dados, f)
+            
+        return jsonify({'mensagem': 'Usuário salvo com sucesso', 'usuario': novo_usuario})
     
     #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
     #Esse método permite o psicólogo marcar uma consulta
@@ -26,17 +74,18 @@ class Psicologo(Usuario):
         dataConsulta = dados_do_front.get('data')
         horarioConsulta = dados_do_front.get('horario')
         idPsicologo = dados_do_front.get('idPsicologo')
+        reservado = False
         
-        novaConsulta = {'nomePaciente': nomeDoPaciente, 'data': dataConsulta, 'horario': horarioConsulta, 'idPsicologo': idPsicologo}
+        novaConsulta = {'nomePaciente': nomeDoPaciente, 'data': dataConsulta, 'horario': horarioConsulta,
+        'idPsicologo': idPsicologo, 'reservado': reservado}
         
-        with open('backend/data/consultas.json', 'r') as f:
-            dados = json.load(f)
+        dados = carregar_dados(CONSULTAS_DB)
         
-        idConsulta = len(dados) + 1
+        idConsulta = (max((c.get('id', -1) for c in dados), default=-1) + 1)
         novaConsulta['id'] = idConsulta
         dados.append(novaConsulta)
         
-        with open('backend/data/consultas.json', 'w') as f:
+        with open(CONSULTAS_DB, 'w') as f:
             json.dump(dados, f)
             
         return jsonify({'mensagem': 'Consulta cadastrada com sucesso', 'consulta': novaConsulta})
@@ -51,22 +100,18 @@ class Psicologo(Usuario):
         dataModificada = dados_do_front.get('dataModificada')
         horarioModificado = dados_do_front.get('horarioModificado')
         
-        with open('backend/data/consultas.json', 'f') as f:
-            dados = json.loads(f)
+        dados = carregar_dados(CONSULTAS_DB)
         
-        for consulta in dados:
-            if consulta['data'] == data and consulta['horario'] == horarioDoFront:
-                consulta['data'] == dataModificada
-                consulta['horario'] == horarioModificado
-                
-                with open('backend/data/consultas.json', 'w') as f:
-                    json.dump(dados, f)
+        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront)
+        
+        if consulta:
+            consulta['horario'] = horarioModificado
+            consulta['data'] = dataModificada
+            dados[indice] = consulta
+            with open(CONSULTAS_DB, 'w') as f:
+                json.dump(dados, f)
+            return jsonify({'mensagem': 'Horário cadastrado com sucesso', 'consulta': consulta}) 
                     
-                return jsonify({'mensagem': 'Consulta modiicada com sucesso', 'consulta': consulta})
-                    
-        with open('backend/data/consultas.json', 'w') as f:
-            json.dump(dados, f)
-            
         return jsonify({'mensagem': 'Data e horário não encontrados'})
     
     @staticmethod
@@ -76,38 +121,85 @@ class Psicologo(Usuario):
         data = dados_do_front.get('data')
         horarioDoFront = dados_do_front.get('horario')
         
-        with open('backend/data/consultas.json', 'f') as f:
-            dados = json.loads(f)
+        dados = carregar_dados(CONSULTAS_DB)
         
-        for consulta in dados:
-            if consulta['data'] == data and consulta['horario'] == horarioDoFront:
-                dados.remove(consulta)
-                
-                with open('backend/data/consultas.json', 'w') as f:
-                    json.dump(dados, f)
+        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront)
+        
+        if consulta:
+            dados.pop(indice)
+            with open(CONSULTAS_DB, 'w') as f:
+                json.dump(dados, f)
+            return jsonify({'mensagem': 'Horário excluido com sucesso', 'consulta': consulta}) 
                     
-                return jsonify({'mensagem': 'Consulta modiicada com sucesso', 'consulta': consulta})
+        return jsonify({'mensagem': 'Data e horário não encontrados'})
+    
+    @staticmethod
+    def editarReserva():
+        dados_do_front = request.get_json()
+        
+        data = dados_do_front.get('data')
+        horarioDoFront = dados_do_front.get('horario')
+        reserva = dados_do_front.get('reserva')
+        
+        dados = carregar_dados(CONSULTAS_DB)
+        
+        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront)
+        
+        if consulta:
+            dados[indice]['reservado'] = reserva
+            with open(CONSULTAS_DB, 'w') as f:
+                json.dump(dados, f)
+            return jsonify({'mensagem': 'Reserva modificada com sucesso', 'consulta': consulta}) 
                     
-        with open('backend/data/consultas.json', 'w') as f:
-            json.dump(dados, f)
+        return jsonify({'mensagem': 'Data e horário não encontrados'}) 
+    
+    @staticmethod
+    def listarConsultas():
+        dados_do_front = request.get_json()
+
+        if not dados_do_front or 'idPsicologo' not in dados_do_front:
+            return jsonify({"erro": "idPsicologo não fornecido no corpo"}), 400
             
-        return jsonify({'mensagem': 'Data e horário não encontrados'})               
-        
+        try:
+            id_psicologo = int(dados_do_front.get('idPsicologo'))
+        except (ValueError, TypeError):
+            return jsonify({"erro": "ID inválido"}), 400
+
+        dados_completos = carregar_dados(CONSULTAS_DB)
+        dados_filtrados = []
+        for consulta in dados_completos:
+            if consulta.get('idPsicologo') == id_psicologo:
+                dados_filtrados.append(consulta)
+                
+        dados_ordenados = sorted(dados_filtrados, key=chaveDeOrdenacao)
+        return jsonify(dados_ordenados)
+            
+
+@app.route('/cadastrar', methods=['POST'])
+def cadastrar_psicologo():
+    return Psicologo.cadastrarPsicologo()
 
 @app.route('/adicionarConsulta', methods=['POST'])
 def marcar_consulta():
-    consulta = Psicologo()
-    return consulta.adicionarConsulta()
+    return Psicologo.adicionarConsulta()
 
 @app.route('/modificarConsulta', methods=['POST'])
 def editar_horario():
-    consulta = Psicologo()
-    return consulta.editarHorario()
+    return Psicologo.editarHorario()
 
 @app.route('/removerConsulta', methods=['POST'])
 def excluir_horario():
-    consulta = Psicologo()
-    return consulta.excluirHorario()
+    return Psicologo.excluirHorario()
+
+@app.route('/editarReserva', methods=['POST'])
+def editar_reserva():
+    return Psicologo.editarReserva()
+
+# CORREÇÃO: Rota alterada para 'POST' para aceitar o ID no corpo.
+@app.route('/listarConsultas', methods=['POST'])
+def listar_consultas():
+    return Psicologo.listarConsultas()
+
 
 if __name__ == '__main__':
     app.run(debug=True)
