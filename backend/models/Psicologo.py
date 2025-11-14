@@ -162,6 +162,9 @@ class Psicologo:
         
         if consulta:
             dados[indice]['reservado'] = reserva
+            if not reserva:
+                dados[indice]['nomePaciente'] = ''
+                dados[indice]['telPaciente'] = ''
             with open(CONSULTAS_DB, 'w') as f:
                 json.dump(dados, f)
             return jsonify({'mensagem': 'Reserva modificada com sucesso', 'consulta': consulta}) 

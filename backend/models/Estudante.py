@@ -1,5 +1,6 @@
 from flask import request, jsonify
 import json
+# CORREÇÃO 1: Importação relativa (com o '.') para funcionar com o app.py
 from .Psicologo import carregar_dados 
 from werkzeug.security import generate_password_hash
 

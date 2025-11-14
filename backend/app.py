@@ -60,7 +60,7 @@ def editar_reserva():
 def listar_consultas():
     return Psicologo.listarConsultas()
 
-@app.route('/listarHorariosLivre', methods=['POST'])
+@app.route('/listarHorariosLivres', methods=['POST'])
 def listar_horarios_livres():
     return Psicologo.listarHorariosLivres()
 
