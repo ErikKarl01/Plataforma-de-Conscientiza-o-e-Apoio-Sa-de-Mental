@@ -119,12 +119,9 @@ class Estudante:
         if not psicologo:
             return jsonify({'mensagem': 'Psicólogo não encontrado'}) 
         
-        # CORREÇÃO 5: Chamando o método 'privado' (que assumimos que você tornará público 
-        # ou renomeará para 'get_consultas_do_psicologo' em Psicologo.py)
-        # Se o método ainda for '_get_consultas...' em Psicologo.py, esta é a forma correta
-        todos_horarios = Psicologo._get_consultas_do_psicologo(psicologo['id'])
         
-        # Lógica de filtrar por 'livres' restaurada
+        todos_horarios = Psicologo.get_consultas_do_psicologo(psicologo['id'])
+        
         horariosLivres = []
         for horario in todos_horarios:
             if not horario.get('reservado'):
@@ -158,7 +155,7 @@ class Estudante:
         return jsonify({'mensagem': 'Data/Horário reservados com sucesso'})
     
     @staticmethod
-    def pesquisaPorData():
+    def pesquisarPorData():
         dados_do_front = request.get_json()
         data = dados_do_front.get('data')
         
@@ -183,10 +180,9 @@ class Estudante:
         ordenada = sorted(lista_retornar, key=chaveDeOrdenacao)
                 
         return jsonify(ordenada)
-
-    # NOVO MÉTODO ADICIONADO
+    
     @staticmethod
-    def pesquisaPorHorario():
+    def pesquisarPorHorario():
         dados_do_front = request.get_json()
         horario = dados_do_front.get('horario')
         

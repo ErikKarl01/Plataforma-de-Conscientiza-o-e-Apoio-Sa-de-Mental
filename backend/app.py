@@ -30,6 +30,22 @@ def editar_estudante():
 def excluir_estudante():
     return Estudante.excluirEstudante()
 
+@app.route('/pesquisar_por_nome', methods=['POST'])
+def pesquisa_horarioData_por_nome_do_psi():
+    return Estudante.pesquisarPorNome()
+
+@app.route('/pesquisar_por_data', methods=['POST'])
+def pesquisa_horarioData_por_data():
+    return Estudante.pesquisarPorData()
+
+@app.route('/pesquisar_por_horario', methods=['POST'])
+def pesquisa_horarioData_por_horario():
+    return Estudante.pesquisarPorHorario()
+
+@app.route('/reservar_data_horario', methods=['POST'])
+def reservar_horarioData_por():
+    return Estudante.reservarDataHorario()
+
 # --- Rotas de Psicólogo ---
 @app.route('/cadastrar', methods=['POST'])
 def cadastrar_psicologo():
