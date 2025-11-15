@@ -1,13 +1,10 @@
 from flask import request, jsonify
 import json
-# CORREÇÃO 1: Importação relativa (com o '.') para funcionar com o app.py
 from .CarregarDados import carregar_dados
 from werkzeug.security import generate_password_hash
-from .Psicologo import pesquisaDataHorario, Psicologo
+from .Psicologo import Psicologo, PSICOLOGO_DB, CONSULTAS_DB, pesquisaDataHorario, chaveDeOrdenacao
 
 ESTUDANTE_DB = 'backend/data/estudante.json'
-CONSULTAS_DB = 'backend/data/consultas.json'
-PSICOLOGO_DB = 'backend/data/psicologos.json'
 
 def pesquisarPsicologoPorNomeEmail(dadosBanco, nome, email):
     for dado in dadosBanco:
@@ -20,6 +17,13 @@ def pesquisaEstudante(dados, id):
         if estudante.get('id') == id:
             return index, estudante
     return (None, None)
+
+def pesquisaDataHorarioPorHorario(dados, horario):
+    return [u for u in dados if u.get('horario') == horario]
+
+def pesquisaDataHorarioPorData(dados, data):
+    return [u for u in dados if u.get('data') == data]
+
 
 class Estudante:
     @staticmethod
@@ -103,24 +107,33 @@ class Estudante:
         return jsonify({'mensagem': 'Estudante excluído com sucesso', 'estudante': estudante})
     
     @staticmethod
-    def pesquisarDataHorarioLivres():
+    def pesquisarPorNome():
         dados_do_front = request.get_json()
         
         nome = dados_do_front.get('nome')
         email = dados_do_front.get('email')
         
-        dados = carregar_dados(PSICOLOGO_DB)
-        psicologo = pesquisarPsicologoPorNomeEmail(dados, nome, email)
+        dados_psicologos = carregar_dados(PSICOLOGO_DB)
+        psicologo = pesquisarPsicologoPorNomeEmail(dados_psicologos, nome, email)
         
         if not psicologo:
             return jsonify({'mensagem': 'Psicólogo não encontrado'}) 
         
-        horariosLivres = Psicologo.get_consultas_do_psicologo(psicologo['id'])
+        # CORREÇÃO 5: Chamando o método 'privado' (que assumimos que você tornará público 
+        # ou renomeará para 'get_consultas_do_psicologo' em Psicologo.py)
+        # Se o método ainda for '_get_consultas...' em Psicologo.py, esta é a forma correta
+        todos_horarios = Psicologo._get_consultas_do_psicologo(psicologo['id'])
+        
+        # Lógica de filtrar por 'livres' restaurada
+        horariosLivres = []
+        for horario in todos_horarios:
+            if not horario.get('reservado'):
+                horariosLivres.append(horario)
         
         return jsonify(horariosLivres)
     
     @staticmethod
-    def selecionarDataHorario():
+    def reservarDataHorario():
         dados_do_front = request.get_json()
         
         nome = dados_do_front.get('nome')
@@ -144,3 +157,61 @@ class Estudante:
         
         return jsonify({'mensagem': 'Data/Horário reservados com sucesso'})
     
+    @staticmethod
+    def pesquisaPorData():
+        dados_do_front = request.get_json()
+        data = dados_do_front.get('data')
+        
+        dadosPsi = carregar_dados(PSICOLOGO_DB)
+        dadosCon = carregar_dados(CONSULTAS_DB)
+        
+        mapa_psicologos = {psi['id']: psi['nome'] for psi in dadosPsi}
+        
+        lista_retornar = []
+        
+        # Usa a função 'pesquisaDataHorarioPorData' (que corrigimos)
+        filtroData = pesquisaDataHorarioPorData(dadosCon, data)
+        
+        for consulta in filtroData:
+            id_psi = consulta.get('idPsicologo')
+            # Busca o nome do psicólogo no mapa
+            nome_psi = mapa_psicologos.get(id_psi)
+            
+            if nome_psi:
+                # Cria uma cópia da consulta para não modificar a original
+                consulta_com_nome = consulta.copy() 
+                consulta_com_nome['nomePsi'] = nome_psi
+                lista_retornar.append(consulta_com_nome)
+                
+        # CORREÇÃO 2: 'chaveDeOrdenacao' agora está importada e pode ser usada
+        ordenada = sorted(lista_retornar, key=chaveDeOrdenacao)
+                
+        return jsonify(ordenada)
+
+    # NOVO MÉTODO ADICIONADO
+    @staticmethod
+    def pesquisaPorHorario():
+        dados_do_front = request.get_json()
+        horario = dados_do_front.get('horario')
+        
+        dadosPsi = carregar_dados(PSICOLOGO_DB)
+        dadosCon = carregar_dados(CONSULTAS_DB)
+        
+        mapa_psicologos = {psi['id']: psi['nome'] for psi in dadosPsi}
+        
+        lista_retornar = []
+        
+        filtroHorario = pesquisaDataHorarioPorHorario(dadosCon, horario)
+        
+        for consulta in filtroHorario:
+            id_psi = consulta.get('idPsicologo')
+            nome_psi = mapa_psicologos.get(id_psi)
+            
+            if nome_psi:
+                consulta_com_nome = consulta.copy() 
+                consulta_com_nome['nomePsi'] = nome_psi
+                lista_retornar.append(consulta_com_nome)
+                
+        ordenada = sorted(lista_retornar, key=chaveDeOrdenacao)
+                
+        return jsonify(ordenada)
