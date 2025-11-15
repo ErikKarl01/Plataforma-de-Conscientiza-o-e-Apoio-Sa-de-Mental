@@ -1,0 +1,23 @@
+.Container1 {
+    background-color: #E2FFFF;
+    width: 100%;
+    min-height: 100vh;
+    padding-top: 30px;
+    padding-bottom: 30px;
+    overflow: hidden;
+
+    display: flex;
+    justify-content: center;
+    align-items: start;
+}
+
+/* .container {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #191919;
+    color: white;
+    padding-bottom: 1.5rem;
+    text-align: center;
+    padding-inline: 1.6rem;
+    overflow: hidden;
+} */

@@ -1,0 +1,103 @@
+.ContainerPai {
+    background-color: #E2FFFF;
+    width: 900px;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.titulo {
+    font-size: 2.3rem;
+    margin-bottom: 10px;
+}
+
+.p {
+    font-size: 1rem;
+}
+
+/* ======================================================= */
+
+.card_Login {
+    background: #ffffff;
+    padding: 60px;
+    width: 600px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-top: 10px;
+    margin-bottom: 40px;
+}
+
+h2 {
+    margin-bottom: 4px;
+    font-size: 22px;
+    color: #333;
+}
+
+.subtitle {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: #666;
+}
+
+label {
+    font-size: 14px;
+    display: block;
+    margin-bottom: 6px;
+    color: #555;
+}
+
+.inputBox {
+    display: flex;
+    align-items: center;
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 16px;
+    background: #fff;
+}
+
+.icon {
+    margin-right: 8px;
+    font-size: 18px;
+    color: #888;
+}
+
+.inputBox input {
+    border: none;
+    outline: none;
+    font-size: 15px;
+    width: 100%;
+}
+
+.container_btn {
+    background-color: white;
+    width: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    font-size: 16px;
+    background: #187a78;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn:hover {
+    background: #0f5d5b;
+}
+
+.btn:active {
+    transform: scale(96%);
+}

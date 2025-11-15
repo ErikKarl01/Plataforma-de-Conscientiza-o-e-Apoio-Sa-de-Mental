@@ -1,0 +1,12 @@
+.Container1 {
+    background-color: #F4F4F4;
+    width: 100%;
+    min-height: 100vh;
+    padding-top: 30px;
+    padding-bottom: 30px;
+    overflow: hidden;
+
+    display: flex;
+    justify-content: center;
+    align-items: start;
+}

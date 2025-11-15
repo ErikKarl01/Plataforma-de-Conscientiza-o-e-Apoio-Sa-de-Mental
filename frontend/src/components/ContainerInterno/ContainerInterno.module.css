@@ -1,0 +1,7 @@
+.ContainerInterno {
+    min-height: 100%;
+    min-width: 500px;
+    max-width: 1900px;
+
+    margin: 0 auto;
+}

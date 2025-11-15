@@ -1,0 +1,97 @@
+.card_Login {
+    background: #ffffff;
+    padding: 60px;
+    width: 80%;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-top: 10px;
+    margin-bottom: 40px;
+}
+
+h2 {
+    margin-bottom: 4px;
+    font-size: 22px;
+    color: #333;
+}
+
+.subtitle {
+    margin-top: 0;
+    margin-bottom: 22px;
+    font-size: 14px;
+    color: #777;
+}
+
+/* GRID */
+.form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px 28px;
+    margin-bottom: 30px;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+}
+
+.inputGroupFull {
+    grid-column: span 2;
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: #555;
+}
+
+input {
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #dcdcdc;
+    font-size: 15px;
+    background: #fff;
+    outline: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+input::placeholder {
+    color: #b1b1b1;
+}
+
+/* BOTÕES */
+.buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.btnConfirm {
+    padding: 12px;
+    background: #187a78;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btnConfirm:hover {
+    background: #0f5d5b;
+}
+
+.btnCancel {
+    padding: 12px;
+    background: #e9f2f1;
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.btnCancel:hover {
+    background: #dce7e6;
+}

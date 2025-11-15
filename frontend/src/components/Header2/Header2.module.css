@@ -1,0 +1,65 @@
+.container {
+    background-color: #E2FFFF;
+    height: 90px;
+    min-width: 900px;
+    max-width: 1920px;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.container_btn_voltar {
+    background-color: #E2FFFF;
+    width: 47%;
+    height: 100%;
+    padding-left: 20px;
+    margin-left: 44px;
+
+    display: flex;
+    justify-content: start;
+    align-items: center;
+}
+
+.btn_voltar {
+    height: 40px;
+    width: 160px;
+    font-size: 1rem;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+ .btn_icon {
+    font-size: 1.6rem;
+    padding-top: 5px;
+ }
+
+.container_logo {
+    background-color: #E2FFFF;
+    width: 53%;
+    height: 100%;
+    padding-top: 20px;
+
+    display: flex;
+    justify-content: start;
+    align-items: center;
+}
+
+.logo {
+    background-color: #C2DFDF;
+    height: 60px;
+    width: 60px;
+    border-radius: 10px;
+    box-shadow: 3px 5px 10px rgba(0, 0, 0, 0.148);
+}
+
+.link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.link:active {
+    transform: scale(98%);
+}

@@ -1,0 +1,57 @@
+.ContainerPai {
+    background-color: #E2FFFF;
+    width: 900px;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.titulo {
+    font-size: 2.3rem;
+    margin-bottom: 10px;
+}
+
+.p {
+    font-size: 1rem;
+}
+
+
+.card_Login {
+    padding: 60px;
+    width: 650px;
+    border-radius: 12px;
+    margin-bottom: 40px;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.container_logo {
+    background-color: white;
+    width: 200px;
+    height: 200px;
+    border-radius: 10px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.logoUsuario, .logoPsicologo {
+    width: 150px;
+    height: 150px;
+}
+
+.link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.link:active {
+    transform: scale(98%);
+}

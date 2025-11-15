@@ -1,0 +1,71 @@
+.container {
+    background-color: #E6EFEE;
+    height: 90px;
+    min-width: 900px;
+    max-width: 1920px;
+
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.container_logo_legenda {
+    width: 350px;
+    height: 90px;
+    padding-left: 25px;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.logo {
+    background-color: #c8c2df;
+    height: 60px;
+    width: 60px;
+    border-radius: 10px;
+    box-shadow: 3px 5px 10px rgba(0, 0, 0, 0.148);
+}
+
+.legendas {
+    display: flex;
+    flex-direction: column;
+}
+
+.legenda1 {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.legenda2 {
+    font-size: 0.8rem;
+}
+
+.btn_sair {
+    background-color: #E6EFEE;
+    width: 70px;
+    height: 40px;
+    margin-right: 20px;
+    font-size: 1.3rem;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn_icon {
+    padding-top: 5px;
+}
+
+.link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.link:active {
+    transform: scale(98%);
+}

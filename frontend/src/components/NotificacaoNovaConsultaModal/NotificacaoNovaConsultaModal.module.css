@@ -1,0 +1,11 @@
+.card_notificacao {
+    background: #ffffff;
+    width: 80%;
+    min-height: 50px;
+    max-height: 100%;
+    padding: 60px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-top: 10px;
+    margin-bottom: 40px;
+}
