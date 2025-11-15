@@ -1,9 +1,9 @@
 import os
 import json
 
-USUARIOS_DB = 'backend/data/psicologos.json'
-CONSULTAS_DB = 'backend/data/consultas.json'
-ESTUDANTE_DB = 'backend/data/estudante.json'
+USUARIOS_DB = 'data/psicologos.json'
+CONSULTAS_DB = 'data/consultas.json'
+ESTUDANTE_DB = 'data/estudante.json'
 
 def carregar_dados(caminho_arquivo):
     """

@@ -5,14 +5,18 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash
 from .CarregarDados import carregar_dados
 
-PSICOLOGO_DB = 'backend/data/psicologos.json'
-CONSULTAS_DB = 'backend/data/consultas.json'
 
-def pesquisaDataHorario(dados, data, horarioDoFront):
+PSICOLOGO_DB = 'data/psicologos.json'
+CONSULTAS_DB = 'data/consultas.json'
+
+def pesquisaDataHorario(dados, data, horarioDoFront, idPsicologo):
     for indice, consulta in enumerate(dados):
-            if consulta['data'] == data and consulta['horario'] == horarioDoFront:
-                return indice, consulta
-    return (None, None) 
+        if (consulta['data'] == data 
+            and consulta['horario'] == horarioDoFront
+            and consulta['idPsicologo'] == idPsicologo):
+            return indice, consulta
+    return (None, None)
+
 
 def chaveDeOrdenacao(consulta): 
     string_completa = consulta['data'] + ' ' + consulta['horario']
@@ -20,8 +24,7 @@ def chaveDeOrdenacao(consulta):
 
 
 class Psicologo:
-    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
-    #Esse método cadastra um usuário 
+
     @staticmethod 
     def cadastrarPsicologo():
         dados_do_front = request.get_json()
@@ -46,21 +49,23 @@ class Psicologo:
             
         return jsonify({'mensagem': 'Usuário salvo com sucesso', 'usuario': novo_usuario})
     
-    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
-    #Esse método permite o psicólogo marcar uma consulta
+
     @staticmethod
-    def adicionarHorario ():
+    def adicionarHorario():
         dados_do_front = request.get_json()
         
         dataConsulta = dados_do_front.get('data')
         horarioConsulta = dados_do_front.get('horario')
         idPsicologo = dados_do_front.get('idPsicologo')
-        nome = ''
-        numeroPaciente = ''
-        reservado = False
-        
-        novaConsulta = {'nomePaciente': nome, 'telPaciente': numeroPaciente,  'data': dataConsulta, 'horario': horarioConsulta,
-        'idPsicologo': idPsicologo, 'reservado': reservado}
+
+        novaConsulta = {
+            'nomePaciente': '',
+            'telPaciente': '',
+            'data': dataConsulta,
+            'horario': horarioConsulta,
+            'idPsicologo': idPsicologo,
+            'reservado': False
+        }
         
         dados = carregar_dados(CONSULTAS_DB)
         
@@ -72,20 +77,22 @@ class Psicologo:
             json.dump(dados, f)
             
         return jsonify({'mensagem': 'Consulta cadastrada com sucesso', 'consulta': novaConsulta})
-    
+
+
     @staticmethod
     def marcarConsulta():
         dados_do_front = request.get_json()
         
         data = dados_do_front.get('data')
         horarioDoFront = dados_do_front.get('horario')
-        
+        idPsicologo = dados_do_front.get('idPsicologo')
+
         nomePaciente = dados_do_front.get('nomePaciente')
         telPaciente = dados_do_front.get('telPaciente')
         
         dados = carregar_dados(CONSULTAS_DB)
         
-        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront)
+        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront, idPsicologo)
         
         if consulta:
             consulta['nomePaciente'] = nomePaciente
@@ -94,26 +101,25 @@ class Psicologo:
             dados[indice] = consulta
             with open(CONSULTAS_DB, 'w') as f:
                 json.dump(dados, f)
-            return jsonify({'mensagem': 'Horário cadastrado com sucesso', 'consulta': consulta}) 
+            return jsonify({'mensagem': 'Horário reservado com sucesso', 'consulta': consulta}) 
                     
-        return jsonify({'mensagem': 'Data e horário não encontrados'})
-        
-    
-    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
-    #Esse método edita data e horário
+        return jsonify({'mensagem': 'Data/horário não encontrados para este psicólogo'})
+
+
     @staticmethod
     def editarHorario():
         dados_do_front = request.get_json()
         
         data = dados_do_front.get('data')
         horarioDoFront = dados_do_front.get('horario')
-        
+        idPsicologo = dados_do_front.get('idPsicologo')
+
         dataModificada = dados_do_front.get('dataModificada')
         horarioModificado = dados_do_front.get('horarioModificado')
         
         dados = carregar_dados(CONSULTAS_DB)
         
-        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront)
+        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront, idPsicologo)
         
         if consulta:
             consulta['horario'] = horarioModificado
@@ -121,108 +127,105 @@ class Psicologo:
             dados[indice] = consulta
             with open(CONSULTAS_DB, 'w') as f:
                 json.dump(dados, f)
-            return jsonify({'mensagem': 'Horário cadastrado com sucesso', 'consulta': consulta}) 
+            return jsonify({'mensagem': 'Horário editado com sucesso', 'consulta': consulta}) 
                     
-        return jsonify({'mensagem': 'Data e horário não encontrados'})
-    
-    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
-    #Esse método excluir uma consulta
+        return jsonify({'mensagem': 'Data/horário não encontrados para este psicólogo'})
+
+
     @staticmethod
     def excluirHorario():
         dados_do_front = request.get_json()
         
         data = dados_do_front.get('data')
         horarioDoFront = dados_do_front.get('horario')
-        
+        idPsicologo = dados_do_front.get('idPsicologo')
+
         dados = carregar_dados(CONSULTAS_DB)
         
-        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront)
+        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront, idPsicologo)
         
         if consulta:
             dados.pop(indice)
             with open(CONSULTAS_DB, 'w') as f:
                 json.dump(dados, f)
-            return jsonify({'mensagem': 'Horário excluido com sucesso', 'consulta': consulta}) 
+            return jsonify({'mensagem': 'Horário excluído com sucesso', 'consulta': consulta}) 
                     
-        return jsonify({'mensagem': 'Data e horário não encontrados'})
-    
-    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
-    #Esse método muda a disponibilidade da reserva para um psicólogo
+        return jsonify({'mensagem': 'Data/horário não encontrados para este psicólogo'})
+
+
     @staticmethod
     def editarReserva():
         dados_do_front = request.get_json()
         
         data = dados_do_front.get('data')
         horarioDoFront = dados_do_front.get('horario')
+        idPsicologo = dados_do_front.get('idPsicologo')
         reserva = dados_do_front.get('reserva')
         
         dados = carregar_dados(CONSULTAS_DB)
         
-        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront)
+        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront, idPsicologo)
         
         if consulta:
-            dados[indice]['reservado'] = reserva
+            consulta['reservado'] = reserva
             if not reserva:
-                dados[indice]['nomePaciente'] = ''
-                dados[indice]['telPaciente'] = ''
+                consulta['nomePaciente'] = ''
+                consulta['telPaciente'] = ''
+            dados[indice] = consulta
+
             with open(CONSULTAS_DB, 'w') as f:
                 json.dump(dados, f)
+
             return jsonify({'mensagem': 'Reserva modificada com sucesso', 'consulta': consulta}) 
                     
-        return jsonify({'mensagem': 'Data e horário não encontrados'}) 
-    
-    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
-    #Esse método adiciona um pacinente a um horário
+        return jsonify({'mensagem': 'Data/horário não encontrados para este psicólogo'})
+
+
     @staticmethod
     def get_consultas_do_psicologo(id_psicologo):
         dados_completos = carregar_dados(CONSULTAS_DB)
         
-        dados_filtrados = []
-        for consulta in dados_completos:
-            if consulta.get('idPsicologo') == id_psicologo:
-                dados_filtrados.append(consulta)
+        dados_filtrados = [
+            consulta for consulta in dados_completos
+            if str(consulta.get('idPsicologo')) == str(id_psicologo)
+        ]
                 
-        dados_ordenados = sorted(dados_filtrados, key=chaveDeOrdenacao)
-        return dados_ordenados
+        return sorted(dados_filtrados, key=chaveDeOrdenacao)
 
-    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
-    #Esse método lista todas as consultas
+
+
     @staticmethod
     def listarConsultas():
         dados_do_front = request.get_json()
+
         if not dados_do_front or 'idPsicologo' not in dados_do_front:
             return jsonify({"erro": "idPsicologo não fornecido"}), 400
-        try:
-            id_psicologo = int(dados_do_front.get('idPsicologo'))
-        except (ValueError, TypeError):
-            return jsonify({"erro": "ID inválido"}), 400
 
-        todosOsHorarios = Psicologo._get_consultas_do_psicologo(id_psicologo)
+        id_psicologo = str(dados_do_front.get('idPsicologo'))
+
+        todosOsHorarios = Psicologo.get_consultas_do_psicologo(id_psicologo)
         
-        horariosReservados = []
-        for horario in todosOsHorarios:
-            if horario.get('reservado'):
-                horariosReservados.append(horario)
+        horariosReservados = [
+            h for h in todosOsHorarios if h.get('reservado')
+        ]
                 
         return jsonify(horariosReservados)
-    
-    #Esse método permite pegar dados do front e adicionar a um arquivo json usado como banco de dados  
-    #Esse método lista todos os horarios livres
+
+
+
     @staticmethod
     def listarHorariosLivres():
         dados_do_front = request.get_json()
+
         if not dados_do_front or 'idPsicologo' not in dados_do_front:
             return jsonify({"erro": "idPsicologo não fornecido"}), 400
-        try:
-            id_psicologo = int(dados_do_front.get('idPsicologo'))
-        except (ValueError, TypeError):
-            return jsonify({"erro": "ID inválido"}), 400
 
-        todosOsHorarios = Psicologo._get_consultas_do_psicologo(id_psicologo)
+        id_psicologo = int(dados_do_front.get('idPsicologo'))
+
+        todosOsHorarios = Psicologo.get_consultas_do_psicologo(id_psicologo)
         
-        horariosLivres = []
-        for horario in todosOsHorarios:
-            if not horario.get('reservado'):
-                horariosLivres.append(horario)
+        horariosLivres = [
+            h for h in todosOsHorarios if not h.get('reservado')
+        ]
                 
         return jsonify(horariosLivres)

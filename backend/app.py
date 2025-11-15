@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 import os
 
 # 1. Importa as CLASSES dos seus arquivos de models
@@ -8,9 +9,10 @@ from models.Login import Login
 
 # --- Configuração Central ---
 app = Flask(__name__)
+CORS(app)  # <-- ATIVA O CORS
 
 # 2. Garante que TODOS os diretórios de dados existam
-os.makedirs('backend/data', exist_ok=True)
+os.makedirs('data', exist_ok=True)
 
 # --- Rotas de Login ---
 @app.route('/login', methods=['POST'])

@@ -4,7 +4,7 @@ from .CarregarDados import carregar_dados
 from werkzeug.security import generate_password_hash
 from .Psicologo import Psicologo, PSICOLOGO_DB, CONSULTAS_DB, pesquisaDataHorario, chaveDeOrdenacao
 
-ESTUDANTE_DB = 'backend/data/estudante.json'
+ESTUDANTE_DB = 'data/estudante.json'
 
 def pesquisarPsicologoPorNomeEmail(dadosBanco, nome, email):
     for dado in dadosBanco:

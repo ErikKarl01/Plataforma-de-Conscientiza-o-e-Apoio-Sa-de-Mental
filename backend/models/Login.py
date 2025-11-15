@@ -2,8 +2,8 @@ from flask import request, jsonify
 from .CarregarDados import carregar_dados
 from werkzeug.security import check_password_hash
 
-PSICOLOGO_DB = 'backend/data/psicologos.json'
-ESTUDANTE_DB = 'backend/data/estudante.json'
+PSICOLOGO_DB = 'data/psicologos.json'
+ESTUDANTE_DB = 'data/estudante.json'
 
 def busca_usuario(dadosDosUsuario, email, senha):
     for usuario in dadosDosUsuario:

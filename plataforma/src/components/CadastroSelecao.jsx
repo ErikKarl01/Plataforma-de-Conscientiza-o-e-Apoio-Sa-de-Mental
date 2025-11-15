@@ -1,12 +1,9 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
-// Importando ícones
 import { FaArrowLeft, FaBrain, FaUserGraduate } from 'react-icons/fa';
 
 function CadastroSelecao() {
   return (
     <div className="container">
-      {/* Link para voltar (ajuste o 'to' para sua rota de login) */}
       <Link to="/login" className="back-link">
         <FaArrowLeft /> Voltar para login
       </Link>
@@ -18,7 +15,6 @@ function CadastroSelecao() {
       </header>
       
       <div className="selection-container">
-        {/* Card Aluno (ajuste o 'to' para a rota de aluno) */}
         <Link to="/cadastro-aluno" className="card">
           <FaUserGraduate className="card-icon" />
           <h3>Aluno</h3>
