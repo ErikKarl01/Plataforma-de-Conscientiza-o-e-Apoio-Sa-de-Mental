@@ -1,5 +1,8 @@
 from flask import request, jsonify
 import json
+import phonenumbers
+from email_validator import validate_email, EmailNotValidError
+from datetime import datetime
 from .CarregarDados import carregar_dados
 from werkzeug.security import generate_password_hash
 from .Psicologo import Psicologo, PSICOLOGO_DB, CONSULTAS_DB, pesquisaDataHorario, chaveDeOrdenacao
@@ -30,10 +33,39 @@ class Estudante:
     def cadastrar():
         dados_do_front = request.get_json()
         
-        nome = dados_do_front.get('nome')
-        email = dados_do_front.get('email')
-        senha = dados_do_front.get('senha')
-        telefone = dados_do_front.get('telefone')
+        try:
+            nome = dados_do_front.get('nome')
+            email = dados_do_front.get('email')
+            senha = dados_do_front.get('senha')
+            telefone = dados_do_front.get('telefone')
+
+            if not nome or not nome.strip():
+                return jsonify({"erro": "O nome não pode estar vazio"}), 400
+            if any(char.isdigit() for char in nome):
+                return jsonify({"erro": "O nome não pode conter números"}), 400
+            nome = nome.strip()
+
+            if not email:
+                return jsonify({"erro": "O email não pode estar vazio"}), 400
+            v = validate_email(email, check_deliverability=False)
+            email = v.normalized
+            
+            if not senha:
+                return jsonify({"erro": "A senha não pode estar vazia"}), 400
+            
+            num_telefone = phonenumbers.parse(telefone, "BR")
+            if not phonenumbers.is_valid_number(num_telefone):
+                raise ValueError("Número de telefone inválido")
+            telefone = phonenumbers.format_number(
+                num_telefone, phonenumbers.PhoneNumberFormat.E164
+            )
+
+        except EmailNotValidError as e:
+            return jsonify({"erro": f"Email inválido: {e}"}), 400
+        except (phonenumbers.phonenumberutil.NumberParseException, ValueError) as e:
+            return jsonify({'erro': f'Telefone inválido: {e}'}), 400
+        except Exception as e:
+            return jsonify({'erro': f'Erro nos dados fornecidos: {e}'}), 400
         
         novo_usuario = {'nome': nome, 'email': email, 'telefone': telefone}
         novo_usuario['senha'] = generate_password_hash(senha) 
@@ -53,9 +85,35 @@ class Estudante:
     def editarEstudante():
         dados_do_front = request.get_json()
         
-        nome = dados_do_front.get('nome')
-        email = dados_do_front.get('email')
-        telefone = dados_do_front.get('telefone')
+        try:
+            nome = dados_do_front.get('nome')
+            email = dados_do_front.get('email')
+            telefone = dados_do_front.get('telefone')
+
+            if not nome or not nome.strip():
+                return jsonify({"erro": "O nome não pode estar vazio"}), 400
+            if any(char.isdigit() for char in nome):
+                return jsonify({"erro": "O nome não pode conter números"}), 400
+            nome = nome.strip()
+
+            if not email:
+                return jsonify({"erro": "O email não pode estar vazio"}), 400
+            v = validate_email(email, check_deliverability=False)
+            email = v.normalized
+            
+            num_telefone = phonenumbers.parse(telefone, "BR")
+            if not phonenumbers.is_valid_number(num_telefone):
+                raise ValueError("Número de telefone inválido")
+            telefone = phonenumbers.format_number(
+                num_telefone, phonenumbers.PhoneNumberFormat.E164
+            )
+
+        except EmailNotValidError as e:
+            return jsonify({"erro": f"Email inválido: {e}"}), 400
+        except (phonenumbers.phonenumberutil.NumberParseException, ValueError) as e:
+            return jsonify({'erro': f'Telefone inválido: {e}'}), 400
+        except Exception as e:
+            return jsonify({'erro': f'Erro nos dados fornecidos: {e}'}), 400
         
         if not dados_do_front or 'id' not in dados_do_front:
             return jsonify({'erro': 'Id não fornecido no corpo'}), 400
@@ -137,13 +195,20 @@ class Estudante:
         telefone = dados_do_front.get('telefone')
         data = dados_do_front.get('data')
         horario = dados_do_front.get('horario')
-        
+        try:
+            idPsicologo = int(dados_do_front.get('idPsicologo'))
+        except (ValueError, TypeError):
+            return jsonify({"erro": "ID do psicólogo inválido ou não fornecido"}), 400
+
         dados = carregar_dados(CONSULTAS_DB)
         
-        index, dataHorarioEscolhido = pesquisaDataHorario(dados, data, horario)
+        index, dataHorarioEscolhido = pesquisaDataHorario(dados, data, horario, idPsicologo)
         
         if not dataHorarioEscolhido:
-            return jsonify({'mensagem': 'Data/Horário não encontrados'})
+            return jsonify({'mensagem': 'Data/Horário não encontrados para este psicólogo'}), 404
+        
+        if dataHorarioEscolhido.get('reservado'):
+            return jsonify({'mensagem': 'Este horário já está reservado'}), 409
         
         dados[index]['reservado'] = True 
         dados[index]['nomePaciente'] = nome
@@ -173,10 +238,17 @@ class Estudante:
             nome_psi = mapa_psicologos.get(id_psi)
             
             if nome_psi:
-                consulta_com_nome = consulta.copy() 
-                consulta_com_nome['nomePsi'] = nome_psi
-                lista_retornar.append(consulta_com_nome)
+                try:
+                    string_completa = consulta['data'] + ' ' + consulta['horario']
+                    datetime.strptime(string_completa, '%d/%m/%Y %H:%M')
+                    
+                    consulta_com_nome = consulta.copy() 
+                    consulta_com_nome['nomePsi'] = nome_psi
+                    lista_retornar.append(consulta_com_nome)
                 
+                except (ValueError, TypeError, KeyError):
+                    pass
+                    
         ordenada = sorted(lista_retornar, key=chaveDeOrdenacao)
                 
         return jsonify(ordenada)
@@ -200,10 +272,17 @@ class Estudante:
             nome_psi = mapa_psicologos.get(id_psi)
             
             if nome_psi:
-                consulta_com_nome = consulta.copy() 
-                consulta_com_nome['nomePsi'] = nome_psi
-                lista_retornar.append(consulta_com_nome)
-                
+                try:
+                    string_completa = consulta['data'] + ' ' + consulta['horario']
+                    datetime.strptime(string_completa, '%d/%m/%Y %H:%M')
+                    
+                    consulta_com_nome = consulta.copy() 
+                    consulta_com_nome['nomePsi'] = nome_psi
+                    lista_retornar.append(consulta_com_nome)
+
+                except (ValueError, TypeError, KeyError):
+                    pass
+                    
         ordenada = sorted(lista_retornar, key=chaveDeOrdenacao)
                 
         return jsonify(ordenada)
