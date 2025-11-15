@@ -1,11 +1,6 @@
-from flask import Flask, request, jsonify
-import json
-import os
-from Psicologo import carregar_dados
-from werkzeug.security import generate_password_hash, check_password_hash
-
-
-app = Flask(__name__)
+from flask import request, jsonify
+from .CarregarDados import carregar_dados
+from werkzeug.security import check_password_hash
 
 PSICOLOGO_DB = 'backend/data/psicologos.json'
 ESTUDANTE_DB = 'backend/data/estudante.json'
@@ -26,8 +21,7 @@ class Login:
         função procura dados nas duas listas e verifica se está em pelo menos uma delas
         função retorna os dados do usuário ou menságemd e erro caso usuário não exista
         """
-        
-        dados_do_front = request.get_json()
+        dados_do_front = request.get_json() 
         
         email = dados_do_front.get('email')
         senha = dados_do_front.get('senha')
@@ -38,7 +32,7 @@ class Login:
         sessao = busca_usuario(dados_estudante, email, senha)
         
         if sessao:
-            return jsonify({'usuario': sessao, 'tipo': 'estudante'})
+            return jsonify({'usuario': sessao, 'tipo': 'estudante'}) 
         
         sessao = busca_usuario(dados_psicologo, email, senha)
         
@@ -46,8 +40,3 @@ class Login:
             return jsonify({'usuario': sessao, 'tipo': 'psicologo'})
             
         return jsonify({'mensagem': 'Usuário não encontrado'}), 400
-        
-        
-@app.route('/login', methods=['POST'])
-def fazer_login():
-    return Login.fazerLogin()

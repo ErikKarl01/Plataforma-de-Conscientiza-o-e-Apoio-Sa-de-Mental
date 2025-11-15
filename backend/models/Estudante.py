@@ -1,18 +1,29 @@
-from flask import Flask, request, jsonify
+from flask import request, jsonify
 import json
-import os
-from Psicologo import carregar_dados
+from .CarregarDados import carregar_dados
 from werkzeug.security import generate_password_hash
-
-app = Flask(__name__)
+from .Psicologo import Psicologo, PSICOLOGO_DB, CONSULTAS_DB, pesquisaDataHorario, chaveDeOrdenacao
 
 ESTUDANTE_DB = 'backend/data/estudante.json'
+
+def pesquisarPsicologoPorNomeEmail(dadosBanco, nome, email):
+    for dado in dadosBanco:
+        if dado['nome'] == nome and dado['email'] == email:
+            return dado
+    return None
 
 def pesquisaEstudante(dados, id):
     for index, estudante in enumerate(dados):
         if estudante.get('id') == id:
             return index, estudante
     return (None, None)
+
+def pesquisaDataHorarioPorHorario(dados, horario):
+    return [u for u in dados if u.get('horario') == horario]
+
+def pesquisaDataHorarioPorData(dados, data):
+    return [u for u in dados if u.get('data') == data]
+
 
 class Estudante:
     @staticmethod
@@ -25,12 +36,12 @@ class Estudante:
         telefone = dados_do_front.get('telefone')
         
         novo_usuario = {'nome': nome, 'email': email, 'telefone': telefone}
-        novo_usuario['senha'] = generate_password_hash(senha)
+        novo_usuario['senha'] = generate_password_hash(senha) 
         
         dados = carregar_dados(ESTUDANTE_DB)
             
         novo_id = (max((u.get('id', -1) for u in dados), default=-1) + 1)
-        novo_usuario['id'] = novo_id  
+        novo_usuario['id'] = novo_id 
         dados.append(novo_usuario)
         
         with open(ESTUDANTE_DB, 'w') as f:
@@ -44,7 +55,6 @@ class Estudante:
         
         nome = dados_do_front.get('nome')
         email = dados_do_front.get('email')
-        senha = dados_do_front.get('senha')
         telefone = dados_do_front.get('telefone')
         
         if not dados_do_front or 'id' not in dados_do_front:
@@ -64,13 +74,12 @@ class Estudante:
         estudante['nome'] = nome
         estudante['email'] = email
         estudante['telefone'] = telefone
-        estudante['senha'] = senha
         
         dados[index] = estudante
         with open(ESTUDANTE_DB, 'w') as f:
             json.dump(dados, f)
             
-        return jsonify({'mensagem': 'Estudasnte modificado com sucesso', 'estudante': estudante})
+        return jsonify({'mensagem': 'Estudante modificado com sucesso', 'estudante': estudante})
     
     @staticmethod
     def excluirEstudante():
@@ -97,15 +106,104 @@ class Estudante:
             
         return jsonify({'mensagem': 'Estudante excluído com sucesso', 'estudante': estudante})
     
-    
-@app.route('/cadastrar_estudante', methods=['POST'])
-def cadastrar_estudante():
-    return Estudante.cadastrar()
-
-@app.route('/editar_estudante', methods=['POST'])
-def editar_estudante():  # <- Corrigido
-    return Estudante.editarEstudante()
+    @staticmethod
+    def pesquisarPorNome():
+        dados_do_front = request.get_json()
         
-@app.route('/excluir_estudante', methods=['POST'])
-def excluir_estudante():  # <- Corrigido
-    return Estudante.excluirEstudante()
+        nome = dados_do_front.get('nome')
+        email = dados_do_front.get('email')
+        
+        dados_psicologos = carregar_dados(PSICOLOGO_DB)
+        psicologo = pesquisarPsicologoPorNomeEmail(dados_psicologos, nome, email)
+        
+        if not psicologo:
+            return jsonify({'mensagem': 'Psicólogo não encontrado'}) 
+        
+        
+        todos_horarios = Psicologo.get_consultas_do_psicologo(psicologo['id'])
+        
+        horariosLivres = []
+        for horario in todos_horarios:
+            if not horario.get('reservado'):
+                horariosLivres.append(horario)
+        
+        return jsonify(horariosLivres)
+    
+    @staticmethod
+    def reservarDataHorario():
+        dados_do_front = request.get_json()
+        
+        nome = dados_do_front.get('nome')
+        telefone = dados_do_front.get('telefone')
+        data = dados_do_front.get('data')
+        horario = dados_do_front.get('horario')
+        
+        dados = carregar_dados(CONSULTAS_DB)
+        
+        index, dataHorarioEscolhido = pesquisaDataHorario(dados, data, horario)
+        
+        if not dataHorarioEscolhido:
+            return jsonify({'mensagem': 'Data/Horário não encontrados'})
+        
+        dados[index]['reservado'] = True 
+        dados[index]['nomePaciente'] = nome
+        dados[index]['telPaciente'] = telefone
+        
+        with open(CONSULTAS_DB, 'w') as f:
+            json.dump(dados, f)
+        
+        return jsonify({'mensagem': 'Data/Horário reservados com sucesso'})
+    
+    @staticmethod
+    def pesquisarPorData():
+        dados_do_front = request.get_json()
+        data = dados_do_front.get('data')
+        
+        dadosPsi = carregar_dados(PSICOLOGO_DB)
+        dadosCon = carregar_dados(CONSULTAS_DB)
+        
+        mapa_psicologos = {psi['id']: psi['nome'] for psi in dadosPsi}
+        
+        lista_retornar = []
+        
+        filtroData = pesquisaDataHorarioPorData(dadosCon, data)
+        
+        for consulta in filtroData:
+            id_psi = consulta.get('idPsicologo')
+            nome_psi = mapa_psicologos.get(id_psi)
+            
+            if nome_psi:
+                consulta_com_nome = consulta.copy() 
+                consulta_com_nome['nomePsi'] = nome_psi
+                lista_retornar.append(consulta_com_nome)
+                
+        ordenada = sorted(lista_retornar, key=chaveDeOrdenacao)
+                
+        return jsonify(ordenada)
+    
+    @staticmethod
+    def pesquisarPorHorario():
+        dados_do_front = request.get_json()
+        horario = dados_do_front.get('horario')
+        
+        dadosPsi = carregar_dados(PSICOLOGO_DB)
+        dadosCon = carregar_dados(CONSULTAS_DB)
+        
+        mapa_psicologos = {psi['id']: psi['nome'] for psi in dadosPsi}
+        
+        lista_retornar = []
+        
+        filtroHorario = pesquisaDataHorarioPorHorario(dadosCon, horario)
+        
+        for consulta in filtroHorario:
+            id_psi = consulta.get('idPsicologo')
+            nome_psi = mapa_psicologos.get(id_psi)
+            
+            if nome_psi:
+                consulta_com_nome = consulta.copy() 
+                consulta_com_nome['nomePsi'] = nome_psi
+                lista_retornar.append(consulta_com_nome)
+                
+        ordenada = sorted(lista_retornar, key=chaveDeOrdenacao)
+                
+        return jsonify(ordenada)
