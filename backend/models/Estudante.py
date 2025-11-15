@@ -169,21 +169,17 @@ class Estudante:
         
         lista_retornar = []
         
-        # Usa a função 'pesquisaDataHorarioPorData' (que corrigimos)
         filtroData = pesquisaDataHorarioPorData(dadosCon, data)
         
         for consulta in filtroData:
             id_psi = consulta.get('idPsicologo')
-            # Busca o nome do psicólogo no mapa
             nome_psi = mapa_psicologos.get(id_psi)
             
             if nome_psi:
-                # Cria uma cópia da consulta para não modificar a original
                 consulta_com_nome = consulta.copy() 
                 consulta_com_nome['nomePsi'] = nome_psi
                 lista_retornar.append(consulta_com_nome)
                 
-        # CORREÇÃO 2: 'chaveDeOrdenacao' agora está importada e pode ser usada
         ordenada = sorted(lista_retornar, key=chaveDeOrdenacao)
                 
         return jsonify(ordenada)
