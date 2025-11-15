@@ -4,15 +4,34 @@ import os
 from datetime import datetime
 from werkzeug.security import generate_password_hash
 from .CarregarDados import carregar_dados
+import phonenumbers
+from email_validator import validate_email, EmailNotValidError
 
 PSICOLOGO_DB = 'backend/data/psicologos.json'
 CONSULTAS_DB = 'backend/data/consultas.json'
 
-def pesquisaDataHorario(dados, data, horarioDoFront):
+def pesquisaDataHorario(dados, data, horarioDoFront, id_sessao=None):
     for indice, consulta in enumerate(dados):
             if consulta['data'] == data and consulta['horario'] == horarioDoFront:
-                return indice, consulta
-    return (None, None) 
+                if id_sessao is None:
+                    return indice, consulta
+                elif consulta.get('idPsicologo') == id_sessao:
+                    return indice, consulta
+    return (None, None)  
+
+def horarioJaExiste(data, horario, idPsicologo):
+    """
+    Verifica se um horário específico já está cadastrado para um psicólogo.
+    Retorna True se existir, False caso contrário.
+    """
+    dados = carregar_dados(CONSULTAS_DB)
+    
+    _indice, consulta_encontrada = pesquisaDataHorario(dados, data, horario, idPsicologo)
+    
+    if consulta_encontrada:
+        return True
+    
+    return False
 
 def chaveDeOrdenacao(consulta): 
     string_completa = consulta['data'] + ' ' + consulta['horario']
@@ -26,11 +45,44 @@ class Psicologo:
     def cadastrarPsicologo():
         dados_do_front = request.get_json()
         
-        nome = dados_do_front.get('nome')
-        email = dados_do_front.get('email')
-        senha = dados_do_front.get('senha')
-        telefone = dados_do_front.get('telefone')
-        crp = dados_do_front.get('crp')
+        try:
+            nome = dados_do_front.get('nome')
+            email = dados_do_front.get('email')
+            senha = dados_do_front.get('senha')
+            telefone = dados_do_front.get('telefone')
+            crp = dados_do_front.get('crp')
+
+            if not nome or not nome.strip():
+                return jsonify({"erro": "O nome não pode estar vazio"}), 400
+            if any(char.isdigit() for char in nome):
+                return jsonify({"erro": "O nome não pode conter números"}), 400
+            nome = nome.strip()
+
+            if not email:
+                return jsonify({"erro": "O email não pode estar vazio"}), 400
+            v = validate_email(email, check_deliverability=False)
+            email = v.normalized
+            
+            if not senha:
+                return jsonify({"erro": "A senha não pode estar vazia"}), 400
+            
+            num_telefone = phonenumbers.parse(telefone, "BR")
+            if not phonenumbers.is_valid_number(num_telefone):
+                raise ValueError("Número de telefone inválido")
+            telefone = phonenumbers.format_number(
+                num_telefone, phonenumbers.PhoneNumberFormat.E164
+            )
+            
+            if not crp or not crp.strip():
+                return jsonify({"erro": "O CRP não pode estar vazio"}), 400
+            crp = crp.strip()
+
+        except EmailNotValidError as e:
+            return jsonify({"erro": f"Email inválido: {e}"}), 400
+        except (phonenumbers.phonenumberutil.NumberParseException, ValueError) as e:
+            return jsonify({'erro': f'Telefone inválido: {e}'}), 400
+        except Exception as e:
+            return jsonify({'erro': f'Erro nos dados fornecidos: {e}'}), 400
         
         novo_usuario = {'nome': nome, 'email': email, 'telefone': telefone, 'crp': crp}
         novo_usuario['senha'] = generate_password_hash(senha)
@@ -52,9 +104,33 @@ class Psicologo:
     def adicionarHorario ():
         dados_do_front = request.get_json()
         
-        dataConsulta = dados_do_front.get('data')
-        horarioConsulta = dados_do_front.get('horario')
-        idPsicologo = dados_do_front.get('idPsicologo')
+        id_front = dados_do_front.get('id')
+        
+        if not id_front:
+            return jsonify({'mensagem': 'Id da sessão não informado no corpo'})
+            
+        try:
+            id_sessao = int(id_front)
+        except:
+            return jsonify({'mensagem': 'Formato de id informado no cropo inválido'})
+        
+        try:
+            dataConsulta = dados_do_front.get('data')
+            horarioConsulta = dados_do_front.get('horario')
+            # Valida o formato
+            datetime.strptime(f'{dataConsulta} {horarioConsulta}', '%d/%m/%Y %H:%M')
+        except (ValueError, TypeError):
+            return jsonify({"erro": "Formato de data ou hora inválido"}), 400
+        
+        existe_data_horario = existe_data_horario(dataConsulta, horarioConsulta, id_sessao)
+        if existe_data_horario:
+            return jsonify({'mensagem': 'Data/horário já cadastrados'})
+
+        try:
+            idPsicologo = int(dados_do_front.get('idPsicologo'))
+        except (ValueError, TypeError):
+             return jsonify({"erro": "ID do psicólogo inválido"}), 400
+        
         nome = ''
         numeroPaciente = ''
         reservado = False
@@ -77,11 +153,33 @@ class Psicologo:
     def marcarConsulta():
         dados_do_front = request.get_json()
         
-        data = dados_do_front.get('data')
-        horarioDoFront = dados_do_front.get('horario')
+        try:
+            data = dados_do_front.get('data')
+            horarioDoFront = dados_do_front.get('horario')
+            datetime.strptime(f'{data} {horarioDoFront}', '%d/%m/%Y %H:%M')
+        except ValueError:
+            return jsonify({'mensagem': 'Formato de data/horário inválidos'})
+        except TypeError:
+            return jsonify({'mensagem': 'Data/horário não fornecidos'})
         
         nomePaciente = dados_do_front.get('nomePaciente')
+        if not nomePaciente or not nomePaciente.strip():
+            return jsonify({"erro": "O nome não pode estar vazio"}), 400
+        elif any(char.isdigit() for char in nomePaciente):
+            return jsonify({"erro": "O nome não pode conter números"}), 400
+        
         telPaciente = dados_do_front.get('telPaciente')
+        
+        try:
+            numero_tel = phonenumbers.parse(telPaciente, "BR")
+            
+            if not phonenumbers.is_valid_number(numero_tel):
+                return jsonify({'mensagem': 'Número inválido, tente outro'})
+            telefone_formatado = phonenumbers.format_number(
+            numero_tel, phonenumbers.PhoneNumberFormat.E164
+            )
+        except Exception as e:
+            return jsonify({'erro': f'Telefone inválido {e}'})
         
         dados = carregar_dados(CONSULTAS_DB)
         
@@ -89,7 +187,7 @@ class Psicologo:
         
         if consulta:
             consulta['nomePaciente'] = nomePaciente
-            consulta['telPaciente'] = telPaciente
+            consulta['telPaciente'] = telefone_formatado
             consulta['reservado'] = True 
             dados[indice] = consulta
             with open(CONSULTAS_DB, 'w') as f:
@@ -105,15 +203,32 @@ class Psicologo:
     def editarHorario():
         dados_do_front = request.get_json()
         
-        data = dados_do_front.get('data')
-        horarioDoFront = dados_do_front.get('horario')
+        id_front = dados_do_front.get('id')
         
-        dataModificada = dados_do_front.get('dataModificada')
-        horarioModificado = dados_do_front.get('horarioModificado')
+        if not id_front:
+            return jsonify({'mensagem': 'Id da sessão não informado no corpo'})
+            
+        try:
+            id_sessao = int(id_front)
+        except:
+            return jsonify({'mensagem': 'Formato de id informado no cropo inválido'})
+            
+        try:
+            data = dados_do_front.get('data')
+            horarioDoFront = dados_do_front.get('horario')
+        
+            dataModificada = dados_do_front.get('dataModificada')
+            horarioModificado = dados_do_front.get('horarioModificado')
+            datetime.strptime(f'{data} {horarioDoFront}', '%d/%m/%Y %H:%M')
+            datetime.strptime(f'{dataModificada} {horarioModificado}', '%d/%m/%Y %H:%M')
+        except ValueError:
+            return jsonify({'mensagem': 'Formato de data/horário inválidos'})
+        except TypeError:
+            return jsonify({'mensagem': 'Data/horário não fornecidos'})
         
         dados = carregar_dados(CONSULTAS_DB)
         
-        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront)
+        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront, id_sessao)
         
         if consulta:
             consulta['horario'] = horarioModificado
@@ -131,12 +246,28 @@ class Psicologo:
     def excluirHorario():
         dados_do_front = request.get_json()
         
-        data = dados_do_front.get('data')
-        horarioDoFront = dados_do_front.get('horario')
+        id_front = dados_do_front.get('id')
+        
+        if not id_front:
+            return jsonify({'mensagem': 'Id da sessão não informado no corpo'})
+            
+        try:
+            id_sessao = int(id_front)
+        except:
+            return jsonify({'mensagem': 'Formato de id informado no cropo inválido'})
+        
+        try:
+            data = dados_do_front.get('data')
+            horarioDoFront = dados_do_front.get('horario')
+            datetime.strptime(f'{data} {horarioDoFront}', '%d/%m/%Y %H:%M')
+        except ValueError:
+            return jsonify({'mensagem': 'Formato de data/horário inválidos'})
+        except TypeError:
+            return jsonify({'mensagem': 'Data/horário não fornecidos'})
         
         dados = carregar_dados(CONSULTAS_DB)
         
-        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront)
+        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront, id_sessao)
         
         if consulta:
             dados.pop(indice)
@@ -152,15 +283,31 @@ class Psicologo:
     def editarReserva():
         dados_do_front = request.get_json()
         
-        data = dados_do_front.get('data')
-        horarioDoFront = dados_do_front.get('horario')
         reserva = dados_do_front.get('reserva')
+        id_front = dados_do_front.get('id')
         
-        dados = carregar_dados(CONSULTAS_DB)
+        if not id_front:
+            return jsonify({'mensagem': 'Id da sessão não informado no corpo'})
+            
+        try:
+            id_sessao = int(id_front)
+        except:
+            return jsonify({'mensagem': 'Formato de id informado no cropo inválido'})
         
-        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront)
+        try:
+            data = dados_do_front.get('data')
+            horarioDoFront = dados_do_front.get('horario')
+            datetime.strptime(f'{data} {horarioDoFront}', '%d/%m/%Y %H:%M')
+        except ValueError:
+            return jsonify({'mensagem': 'Formato de data/horário inválidos'})
+        except TypeError:
+            return jsonify({'mensagem': 'Data/horário não fornecidos'})
+            
+        dados = carregar_dados(CONSULTAS_DB)                    
         
-        if consulta:
+        indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront, id_sessao)
+        
+        if consulta:                    
             dados[indice]['reservado'] = reserva
             if not reserva:
                 dados[indice]['nomePaciente'] = ''
@@ -180,7 +327,14 @@ class Psicologo:
         dados_filtrados = []
         for consulta in dados_completos:
             if consulta.get('idPsicologo') == id_psicologo:
-                dados_filtrados.append(consulta)
+                try:
+                    string_completa = consulta['data'] + ' ' + consulta['horario']
+                    datetime.strptime(string_completa, '%d/%m/%Y %H:%M')
+                    
+                    dados_filtrados.append(consulta)
+                    
+                except (ValueError, TypeError, KeyError):
+                    print(f"Aviso: Ignorando consulta com formato de data inválido. ID: {consulta.get('id')}")
                 
         dados_ordenados = sorted(dados_filtrados, key=chaveDeOrdenacao)
         return dados_ordenados
@@ -197,7 +351,7 @@ class Psicologo:
         except (ValueError, TypeError):
             return jsonify({"erro": "ID inválido"}), 400
 
-        todosOsHorarios = Psicologo._get_consultas_do_psicologo(id_psicologo)
+        todosOsHorarios = Psicologo.get_consultas_do_psicologo(id_psicologo)
         
         horariosReservados = []
         for horario in todosOsHorarios:
@@ -218,7 +372,7 @@ class Psicologo:
         except (ValueError, TypeError):
             return jsonify({"erro": "ID inválido"}), 400
 
-        todosOsHorarios = Psicologo._get_consultas_do_psicologo(id_psicologo)
+        todosOsHorarios = Psicologo.get_consultas_do_psicologo(id_psicologo)
         
         horariosLivres = []
         for horario in todosOsHorarios:
