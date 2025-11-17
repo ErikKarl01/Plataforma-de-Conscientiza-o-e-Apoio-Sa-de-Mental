@@ -29,32 +29,30 @@ function CadastroPsicologo() {
     setIsLoading(true);
 
     try {
-      const dataToSend = { nome, crp, email, telefone, senha };
+      const telefoneLimpo = telefone.replace(/\D/g, "");
+
+      const dataToSend = { nome, crp, email, telefone: telefoneLimpo, senha };
+
       const response = await fetch('http://127.0.0.1:5000/cadastrar', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataToSend),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha no cadastro. Tente novamente.');
+        throw new Error(errorData.erro || 'Falha no cadastro. Tente novamente.');
       }
 
       setIsSuccess(true);
-
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      setTimeout(() => navigate('/login'), 2000);
 
     } catch (err) {
       setError(err.message);
     } finally {
       setIsLoading(false);
     }
-  };
+  }; // <-- FECHAMENTO CORRETO DA FUNÇÃO
 
   return (
     <div className="container">
@@ -71,8 +69,8 @@ function CadastroPsicologo() {
       {!isSuccess ? (
         <form className="form-container" onSubmit={handleSubmit}>
           <h2>Criar Conta</h2>
-          <p className="form-subtitle">Preencha o formulário a baixo para criar sua conta</p>
-          
+          <p className="form-subtitle">Preencha o formulário abaixo para criar sua conta</p>
+
           <div className="form-grid">
             <div className="form-group">
               <label htmlFor="nome">Nome completo</label>
@@ -85,6 +83,7 @@ function CadastroPsicologo() {
                 required
               />
             </div>
+
             <div className="form-group">
               <label htmlFor="crp">CRP</label>
               <input
@@ -96,6 +95,7 @@ function CadastroPsicologo() {
                 required
               />
             </div>
+
             <div className="form-group">
               <label htmlFor="email">E-mail</label>
               <input
@@ -107,6 +107,7 @@ function CadastroPsicologo() {
                 required
               />
             </div>
+
             <div className="form-group">
               <label htmlFor="telefone">Telefone</label>
               <input
@@ -118,6 +119,7 @@ function CadastroPsicologo() {
                 required
               />
             </div>
+
             <div className="form-group">
               <label htmlFor="senha">Senha</label>
               <input
@@ -129,6 +131,7 @@ function CadastroPsicologo() {
                 required
               />
             </div>
+
             <div className="form-group">
               <label htmlFor="confirmarSenha">Confirmar senha</label>
               <input
@@ -141,7 +144,7 @@ function CadastroPsicologo() {
               />
             </div>
           </div>
-          
+
           {error && (
             <div className="message-container error-message">
               <p>{error}</p>
