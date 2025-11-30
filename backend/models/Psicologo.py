@@ -104,7 +104,7 @@ class Psicologo:
     def adicionarHorario ():
         dados_do_front = request.get_json()
         
-        id_sessao = validar_id(dados_do_front.get('id'), "ID da Sessão")
+        id_sessao = validar_id(dados_do_front.get('idPsicologo'))
         dataConsulta, horarioConsulta = validar_data_hora(dados_do_front.get('data'), dados_do_front.get('horario'))
         duracao = validar_duracao(dados_do_front.get('duracao'))
         causa = validar_causa(dados_do_front.get('causa'))
@@ -201,7 +201,7 @@ class Psicologo:
     def editarHorario():
         dados_do_front = request.get_json()
         
-        id_sessao = validar_id(dados_do_front.get('id'), "ID da Sessão")
+        id_sessao = validar_id(dados_do_front.get('id'))
         
         data, horarioDoFront = validar_data_hora(dados_do_front.get('data'), dados_do_front.get('horario'))
         
@@ -235,7 +235,7 @@ class Psicologo:
     def excluirHorario():
         dados_do_front = request.get_json()
         
-        id_sessao = validar_id(dados_do_front.get('id'), "ID da Sessão")
+        id_sessao = validar_id(dados_do_front.get('id'))
         data, horarioDoFront = validar_data_hora(dados_do_front.get('data'), dados_do_front.get('horario'))
         
         dados = carregar_dados(CONSULTAS_DB)
@@ -255,7 +255,7 @@ class Psicologo:
     def editarReserva():
         dados_do_front = request.get_json()
         
-        id_sessao = validar_id(dados_do_front.get('id'), "ID da Sessão")
+        id_sessao = validar_id(dados_do_front.get('id'))
         data, horarioDoFront = validar_data_hora(dados_do_front.get('data'), dados_do_front.get('horario'))
         duracao = validar_duracao(dados_do_front.get('duracao'))
         causa = validar_causa(dados_do_front.get('causa'))
@@ -314,7 +314,7 @@ class Psicologo:
     def listarConsultas():
         dados_do_front = request.get_json()
         
-        id_psicologo = validar_id(dados_do_front.get('idPsicologo'), "ID do Psicólogo")
+        id_psicologo = validar_id(dados_do_front.get('idPsicologo'))
 
         todosOsHorarios = Psicologo.get_consultas_do_psicologo(id_psicologo)
         
@@ -324,10 +324,10 @@ class Psicologo:
     
     @staticmethod
     @tratar_erros
-    def listarHorariosLivres():
+    def listarHorariosLivresPsi():
         dados_do_front = request.get_json()
         
-        id_psicologo = validar_id(dados_do_front.get('idPsicologo'), "ID do Psicólogo")
+        id_psicologo = validar_id(dados_do_front.get('idPsicologo'))
 
         todosOsHorarios = Psicologo.get_consultas_do_psicologo(id_psicologo)
         
@@ -348,8 +348,8 @@ class Psicologo:
         """
         
         dados_do_front = request.get_json()
-        idSessao = validar_id(dados_do_front.get('idPsicologo'), "ID do Psicólogo")
-        if not idSessao:
+        idSessao = validar_id(dados_do_front.get('idPsicologo'))
+        if idSessao is None:
             return jsonify({'mensagem': 'Id da sessão não informado no corpo da requisição'}), 404
         
         dadosConsultas = carregar_dados(CONSULTAS_DB)

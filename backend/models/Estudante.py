@@ -224,11 +224,11 @@ class Estudante:
     def pesquisarPorData():
         d = request.get_json() or {}
         try:
-            validar_data_hora(d.get('data'), '00:00') 
+            dataValida, hora = validar_data_hora(d.get('data'), '00:00') 
         except ValueError:
             return jsonify({'erro': 'Data inválida'}), 400
             
-        return Estudante._pesquisar_generico(pesquisaDataHorarioPorData, d.get('data'))
+        return Estudante._pesquisar_generico(pesquisaDataHorarioPorData, dataValida)
 
     @staticmethod
     def pesquisarPorHorario():
