@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaBrain, FaArrowLeft, FaEnvelope, FaLock } from 'react-icons/fa6'; 
 
-// URL  API 
+// URL API
 const API_URL = 'http://127.0.0.1:5000'; 
 
 function Login() {
@@ -30,24 +30,26 @@ function Login() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Se a resposta não for OK (status 400 'Usuário não encontrado')
         throw new Error(data.mensagem || 'Erro ao fazer login.');
       }
 
-      // Se o login for bem-sucedido (response.ok é true)
+      // Login bem-sucedido
       if (data.usuario && data.tipo) {
         sessionStorage.setItem('tipoUsuario', data.tipo);
 
-        // Redireciona com base no tipo de usuário
         if (data.tipo === 'psicologo') {
-            localStorage.setItem("idPsicologo", data.usuario.id); 
-            navigate('/agenda');
-            window.location.reload();
+          // Psicólogo
+          localStorage.setItem("idPsicologo", data.usuario.id); 
+          localStorage.removeItem("dadosAluno"); // Limpa dados antigos se houver
+          navigate('/agenda');
+          window.location.reload();
         } else {
-          navigate('/'); // Estudante vai para a Home
+          // Estudante
+          localStorage.setItem("dadosAluno", JSON.stringify(data.usuario));
+          localStorage.removeItem("idPsicologo"); // Limpa id de psicólogo se houver
+          navigate('/portal-aluno'); // Redireciona para portal do aluno
         }
       } else {
-        // Caso a resposta seja 200 OK, mas o formato esteja inesperado
         setError('Resposta inválida do servidor.');
       }
 

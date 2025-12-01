@@ -691,4 +691,119 @@ h1, h2, h3, p {
   .home-login-btn {
     padding: 0.6rem 1.25rem;
   }
+
+  /* --- Estilos da Aba Minhas Consultas (Cards de Status) --- */
+
+  .lista-status-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      width: 100%;
+  }
+
+  .status-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+      position: relative;
+      border: 1px solid transparent; /* Base para a borda colorida */
+      flex-wrap: wrap; /* Para responsividade */
+  }
+
+  /* 1. Card Confirmada (Verde) */
+  .card-confirmada {
+      border-color: #A5D6A7; /* Verde claro borda */
+  }
+  .card-confirmada .icon-status {
+      color: #4CAF50;
+  }
+
+  /* 2. Card Aguardando (Laranja/Marrom) */
+  .card-aguardando {
+      border-color: #FFCC80; /* Laranja claro borda */
+  }
+  .card-aguardando .icon-status {
+      color: #FF9800; /* Laranja icone */
+  }
+
+  /* 3. Card Rejeitada (Vermelho) */
+  .card-rejeitada {
+      border-color: #EF9A9A; /* Vermelho claro borda */
+  }
+  .card-rejeitada .icon-status {
+      color: #E53935; /* Vermelho icone */
+  }
+
+  /* Header do Card (Icone + Texto Status) */
+  .status-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      font-size: 1rem;
+      color: #333;
+      flex-basis: 100%; /* Ocupa a linha de cima */
+      margin-bottom: 0.5rem;
+  }
+
+  .icon-status {
+      font-size: 1.2rem;
+  }
+
+  /* Corpo do Card (Data e Hora) */
+  .status-body {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #000;
+  }
+
+  /* Botões Específicos */
+  .btn-cancelar-reserva {
+      background-color: #E57373; /* Vermelho suave */
+      color: white;
+      border: none;
+      padding: 0.6rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+  }
+
+  .btn-cancelar-reserva:hover {
+      opacity: 0.9;
+  }
+
+  .btn-tentar-novamente {
+      background-color: #E57373; /* Vermelho suave */
+      color: white;
+      border: none;
+      padding: 0.6rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+  }
+
+  .btn-tentar-novamente:hover {
+      opacity: 0.9;
+  }
+
+  /* Ajustes no Mobile */
+  @media (max-width: 600px) {
+      .status-card {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1rem;
+      }
+      .status-body {
+          margin-bottom: 0.5rem;
+      }
+      .btn-cancelar-reserva, .btn-tentar-novamente {
+          width: 100%;
+      }
+  }
 }
+

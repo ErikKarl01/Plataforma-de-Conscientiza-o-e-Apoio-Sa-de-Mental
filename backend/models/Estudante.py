@@ -245,14 +245,16 @@ class Estudante:
     def _pesquisar_generico(funcao_filtro, valor):
         dados_psi = carregar_dados(PSICOLOGO_DB)
         dados_con = carregar_dados(CONSULTAS_DB)
-        mapa_psi = {psi['id']: psi['nome'] for psi in dados_psi}
+        # Cria mapa com OBJETO COMPLETO do psicologo para ter nome e email
+        mapa_psi = {psi['id']: psi for psi in dados_psi}
         
         retorno = []
         for c in funcao_filtro(dados_con, valor):
-            nome = mapa_psi.get(c.get('idPsicologo'))
-            if nome:
+            psi_obj = mapa_psi.get(c.get('idPsicologo'))
+            if psi_obj:
                 c_copy = c.copy()
-                c_copy['nomePsi'] = nome
+                c_copy['nomePsi'] = psi_obj['nome']
+                c_copy['emailPsi'] = psi_obj['email']
                 retorno.append(c_copy)
                 
         return jsonify(sorted(retorno, key=chaveDeOrdenacao))
@@ -260,9 +262,29 @@ class Estudante:
     @staticmethod
     @tratar_erros
     def listarHorariosLivres():
+        # Alterado para listar GERAL se não houver filtro
         d = request.get_json()
-        if not d: raise ValueError("Dados não fornecidos")
         
+        # Se vier vazio ou sem nome/email, lista todos os disponíveis de todos os psicólogos
+        if not d or (not d.get('nome') and not d.get('email')):
+            dados_psi = carregar_dados(PSICOLOGO_DB)
+            dados_con = carregar_dados(CONSULTAS_DB)
+            # Mapa id -> {nome, email}
+            mapa_psi = {p['id']: {'nome': p['nome'], 'email': p['email']} for p in dados_psi}
+            
+            livres_geral = []
+            for c in dados_con:
+                if not c.get('reservado'):
+                    psi_info = mapa_psi.get(c.get('idPsicologo'))
+                    if psi_info:
+                        c_copy = c.copy()
+                        c_copy['nomePsi'] = psi_info['nome']
+                        c_copy['emailPsi'] = psi_info['email']
+                        livres_geral.append(c_copy)
+            
+            return jsonify(sorted(livres_geral, key=chaveDeOrdenacao))
+
+        # Se tiver filtros, mantém a lógica antiga de buscar específico
         nome = validar_nome(d.get('nome'))
         email = validar_email_func(d.get('email'))
         
@@ -273,7 +295,16 @@ class Estudante:
             return jsonify({"erro": "Psicologo não encontrado"}), 404
 
         todos = Psicologo.get_consultas_do_psicologo(psi['id'])
-        return jsonify([h for h in todos if not h.get('reservado')])
+        # Aqui também enriquecemos com os dados do psi para o front
+        retorno = []
+        for h in todos:
+            if not h.get('reservado'):
+                h_copy = h.copy()
+                h_copy['nomePsi'] = psi['nome']
+                h_copy['emailPsi'] = psi['email']
+                retorno.append(h_copy)
+
+        return jsonify(retorno)
 
     @staticmethod
     @tratar_erros
@@ -285,13 +316,21 @@ class Estudante:
         id_est = validar_id(d.get('id'))
         dados_con = carregar_dados(CONSULTAS_DB)
         dados_psi = carregar_dados(PSICOLOGO_DB)
-        mapa_psi = {p['id']: p['nome'] for p in dados_psi}
+        # Mapa agora guarda o objeto completo ou dict com email para uso futuro
+        mapa_psi = {p['id']: {'nome': p['nome'], 'email': p['email']} for p in dados_psi}
         
         lista = []
         for c in dados_con:
             if c.get('reservadoPorEstudante') and c.get('idEstudante') == id_est:
                 c_display = c.copy()
-                c_display['nomePsi'] = mapa_psi.get(c.get('idPsicologo'), 'N/A')
+                psi_info = mapa_psi.get(c.get('idPsicologo'))
+                if psi_info:
+                    c_display['nomePsi'] = psi_info['nome']
+                    c_display['emailPsi'] = psi_info['email'] # <--- Adicionado Email
+                else:
+                    c_display['nomePsi'] = 'N/A'
+                    c_display['emailPsi'] = ''
+                
                 lista.append(c_display)
         
         return jsonify(sorted(lista, key=chaveDeOrdenacao))
