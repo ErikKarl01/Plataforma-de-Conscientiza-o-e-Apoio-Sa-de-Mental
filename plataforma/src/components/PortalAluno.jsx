@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FaBrain, 
   FaSignOutAlt, 
-  FaClipboardList,
+  FaClipboardList, 
   FaCheckCircle,
   FaRegClock,
   FaTimesCircle,
@@ -22,7 +22,48 @@ function PortalAluno() {
   const [successMsg, setSuccessMsg] = useState(null);
   const navigate = useNavigate();
 
-  const dadosAluno = JSON.parse(localStorage.getItem("dadosAluno"));
+  const dadosAluno = useMemo(() => {
+    return JSON.parse(localStorage.getItem("dadosAluno"));
+  }, []);
+
+  const fetchHorariosLivres = useCallback(async () => {
+      try {
+          const response = await fetch(`${API_URL}/listar_horarios_livres`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({}) 
+          });
+          if (response.ok) {
+              const data = await response.json();
+              setHorariosLivres(data);
+          } else {
+              setHorariosLivres([]);
+          }
+      } catch {
+          setError("Erro ao carregar horários. Verifique sua conexão.");
+      }
+  }, []);
+
+  const fetchMinhasConsultas = useCallback(async () => {
+      if (!dadosAluno) return;
+      try {
+          const response = await fetch(`${API_URL}/listar_minhas_solicitacoes`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: dadosAluno.id })
+          });
+          if (response.ok) {
+              const data = await response.json();
+              const dataComStatus = data.map(c => ({
+                  ...c,
+                  status: c.status || 'pendente' 
+              }));
+              setMinhasConsultas(dataComStatus);
+          }
+      } catch (err) {
+          console.error("Erro ao buscar consultas", err);
+      }
+  }, [dadosAluno]);
 
   useEffect(() => {
     if (!dadosAluno) {
@@ -34,7 +75,7 @@ function PortalAluno() {
             fetchMinhasConsultas();
         }
     }
-  }, [activeTab]);
+  }, [activeTab, dadosAluno, navigate, fetchHorariosLivres, fetchMinhasConsultas]);
 
   const formatarDataExtenso = (dataString, horaString) => {
       try {
@@ -45,48 +86,6 @@ function PortalAluno() {
           return `${dataFormatada} às ${horaString}`;
       } catch {
           return `${dataString} às ${horaString}`;
-      }
-  };
-
-  // --- BUSCAR HORÁRIOS DISPONÍVEIS ---
-  const fetchHorariosLivres = async () => {
-      try {
-          const response = await fetch(`${API_URL}/listar_horarios_livres`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({}) // Corpo vazio para listar todos
-          });
-          if (response.ok) {
-              const data = await response.json();
-              setHorariosLivres(data);
-          } else {
-              setHorariosLivres([]);
-          }
-      } catch {
-          setError("Erro ao carregar horários. Verifique sua conexão.");
-      }
-  };
-
-  // --- BUSCAR MINHAS CONSULTAS (COM STATUS REAL) ---
-  const fetchMinhasConsultas = async () => {
-      try {
-          const response = await fetch(`${API_URL}/listar_minhas_solicitacoes`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ id: dadosAluno.id })
-          });
-          if (response.ok) {
-              const data = await response.json();
-              // Agora usamos o status real vindo do backend.
-              // Fallback: se não tiver status, assume 'pendente' (para compatibilidade)
-              const dataComStatus = data.map(c => ({
-                  ...c,
-                  status: c.status || 'pendente' 
-              }));
-              setMinhasConsultas(dataComStatus);
-          }
-      } catch (err) {
-          console.error("Erro ao buscar consultas", err);
       }
   };
 
@@ -103,6 +102,9 @@ function PortalAluno() {
 
       try {
           const payload = {
+              // ENVIAR ID DO ESTUDANTE PARA VINCULAR A CONSULTA
+              idEstudante: dadosAluno.id, 
+
               nomePaci: dadosAluno.nome,
               emailPaci: dadosAluno.email,
               telefonePaci: dadosAluno.telefone,
@@ -127,7 +129,7 @@ function PortalAluno() {
           setSuccessMsg("Solicitação enviada com sucesso! Aguarde a confirmação.");
           setHorarioSelecionado(null);
           setMotivoConsulta('');
-          // Redireciona para a aba de "Minhas Consultas" para ver o status "Aguardando"
+          fetchHorariosLivres();
           setTimeout(() => setActiveTab('minhasConsultas'), 2000);
 
       } catch (err) {
@@ -170,11 +172,32 @@ function PortalAluno() {
 
   const horariosAgrupados = agruparHorarios(horariosLivres);
 
-  // --- RENDERIZAÇÃO DOS CARDS BASEADA NO STATUS REAL ---
   const renderCardConsulta = (consulta) => {
       const dataFormatada = formatarDataExtenso(consulta.data, consulta.horario);
 
-      // 1. CONFIRMADA (Verde)
+      const renderCardBody = () => (
+          <div className="status-body">
+              {dataFormatada}
+              <div style={{fontSize:'0.9rem', marginTop:'0.5rem', color:'#555'}}>
+                 Profissional: <strong>{consulta.nomePsi}</strong>
+              </div>
+              {consulta.causa && (
+                  <div style={{
+                      marginTop: '0.8rem',
+                      padding: '0.6rem',
+                      backgroundColor: 'rgba(0,0,0,0.03)',
+                      borderRadius: '6px',
+                      fontSize: '0.85rem',
+                      color: '#555',
+                      borderLeft: '3px solid #ccc'
+                  }}>
+                      <span style={{fontWeight:'600', display:'block', marginBottom:'2px'}}>Observação:</span>
+                      "{consulta.causa}"
+                  </div>
+              )}
+          </div>
+      );
+
       if (consulta.status === 'confirmada') {
           return (
               <div key={consulta.id} className="status-card card-confirmada">
@@ -182,17 +205,11 @@ function PortalAluno() {
                       <FaCheckCircle className="icon-status" />
                       <span>Confirmada</span>
                   </div>
-                  <div className="status-body">
-                      {dataFormatada}
-                      <div style={{fontSize:'0.9rem', marginTop:'0.5rem', color:'#555'}}>
-                         Profissional: {consulta.nomePsi}
-                      </div>
-                  </div>
+                  {renderCardBody()}
               </div>
           );
       }
 
-      // 2. REJEITADA (Vermelho)
       if (consulta.status === 'rejeitada') {
           return (
               <div key={consulta.id} className="status-card card-rejeitada">
@@ -200,12 +217,7 @@ function PortalAluno() {
                       <FaTimesCircle className="icon-status" />
                       <span>Rejeitada</span>
                   </div>
-                  <div className="status-body">
-                      {dataFormatada}
-                      <div style={{fontSize:'0.9rem', marginTop:'0.5rem', color:'#555'}}>
-                         Profissional: {consulta.nomePsi}
-                      </div>
-                  </div>
+                  {renderCardBody()}
                   <button className="btn-tentar-novamente" onClick={() => setActiveTab('horariosDisponiveis')}>
                       Tentar novamente
                   </button>
@@ -213,19 +225,13 @@ function PortalAluno() {
           );
       }
 
-      // 3. PENDENTE / AGUARDANDO (Laranja) - Default
       return (
           <div key={consulta.id} className="status-card card-aguardando">
               <div className="status-header">
                   <FaRegClock className="icon-status" />
                   <span>Aguardando confirmação</span>
               </div>
-              <div className="status-body">
-                  {dataFormatada}
-                  <div style={{fontSize:'0.9rem', marginTop:'0.5rem', color:'#555'}}>
-                      Profissional: {consulta.nomePsi}
-                  </div>
-              </div>
+              {renderCardBody()}
               <button className="btn-cancelar-reserva" onClick={() => handleCancelar(consulta)}>
                   Cancelar
               </button>
@@ -259,7 +265,6 @@ function PortalAluno() {
 
       <main className="agenda-main" style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
 
-        {/* ABA: HORARIOS DISPONIVEIS */}
         {activeTab === 'horariosDisponiveis' && (
             <>
                 <div style={{ flex: 2 }}>
@@ -317,7 +322,6 @@ function PortalAluno() {
             </>
         )}
 
-        {/* ABA: MINHAS CONSULTAS */}
         {activeTab === 'minhasConsultas' && (
             <div style={{ width: '100%' }}>
                 {minhasConsultas.length === 0 ? (

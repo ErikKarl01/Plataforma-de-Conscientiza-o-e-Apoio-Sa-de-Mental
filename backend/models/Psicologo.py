@@ -31,20 +31,29 @@ def tratar_erros(f):
 
 def pesquisaPaciente(dadosEstudante, nome_buscado, telefone_formatado_buscado):
     nome_normalizado = nome_buscado.strip().lower()
+
     for indice, estudante in enumerate(dadosEstudante):
         estudante_nome_normalizado = estudante.get('nome', '').strip().lower()
         estudante_telefone = estudante.get('telefone', '') 
-        if estudante_nome_normalizado == nome_normalizado and estudante_telefone == telefone_formatado_buscado:
+
+        if estudante_nome_normalizado == nome_normalizado and \
+           estudante_telefone == telefone_formatado_buscado:
             return indice, estudante
+    
     return (None, None)
 
 def pesquisaDataHorario(dados, data, horarioDoFront, id_sessao=None):
     for indice, consulta in enumerate(dados):
-        if consulta['data'] == data and consulta['horario'] == horarioDoFront:
-            if id_sessao is None:
-                return indice, consulta
-            elif consulta.get('idPsicologo') == id_sessao:
-                return indice, consulta
+            if consulta['data'] == data and consulta['horario'] == horarioDoFront:
+                # Conversão de segurança para comparar IDs
+                c_id = consulta.get('idPsicologo')
+                try: c_id = int(c_id)
+                except: pass
+                
+                if id_sessao is None:
+                    return indice, consulta
+                elif c_id == id_sessao:
+                    return indice, consulta
     return (None, None) 
 
 def horarioJaExiste(data, horario, idPsicologo):
@@ -88,7 +97,12 @@ class Psicologo:
         dados_do_front = request.get_json()
         dataConsulta = dados_do_front.get('data')
         horarioConsulta = dados_do_front.get('horario')
-        idPsicologo = dados_do_front.get('idPsicologo')
+        
+        try:
+            idPsicologo = int(dados_do_front.get('idPsicologo'))
+        except (ValueError, TypeError):
+            return jsonify({'mensagem': 'ID do psicólogo inválido'}), 400
+
         duracao = dados_do_front.get('duracao', '50')
 
         novaConsulta = {
@@ -96,10 +110,10 @@ class Psicologo:
             'telPaciente': '',
             'data': dataConsulta,
             'horario': horarioConsulta,
-            'idPsicologo': idPsicologo,
+            'idPsicologo': idPsicologo, 
             'reservado': False,
             'duracao': duracao,
-            'status': 'livre'  
+            'status': 'livre'
         }
         
         dados = carregar_dados(CONSULTAS_DB)
@@ -126,6 +140,7 @@ class Psicologo:
         
         dados = carregar_dados(CONSULTAS_DB)
         dadosEst = carregar_dados(ESTUDANTE_DB)
+        
         indice, consulta = pesquisaDataHorario(dados, data, horarioDoFront)
         _indexEst, estudante = pesquisaPaciente(dadosEst, nomePaciente_limpo, telefone_formatado)
         
@@ -146,7 +161,7 @@ class Psicologo:
             'reservado': True,
             'reservadoPorEstudante': reservado_por_estudante,
             'idEstudante': id_estudante,
-            'status': 'confirmada' 
+            'status': 'confirmada' # <--- FIX: Manual é sempre confirmada
         })
         if duracao: consulta['duracao'] = duracao
         if causa: consulta['causa'] = causa
@@ -157,26 +172,53 @@ class Psicologo:
 
     @staticmethod
     @tratar_erros
-    def editarHorario():
-        # Implementação existente original
-        return Psicologo._editarHorarioOriginal()
-
-    @staticmethod
-    @tratar_erros
     def excluirHorario():
-        return Psicologo._excluirHorarioOriginal()
+        dados_do_front = request.get_json()
+        
+        # FIX: Tenta deletar pelo ID primeiro, que é mais seguro
+        id_consulta = dados_do_front.get('id')
+        
+        dados = carregar_dados(CONSULTAS_DB)
+        indice_encontrado = -1
+        
+        if id_consulta is not None:
+            try:
+                id_consulta = int(id_consulta)
+                for i, c in enumerate(dados):
+                    if c.get('id') == id_consulta:
+                        indice_encontrado = i
+                        break
+            except:
+                pass
+        
+        # Fallback para data/horario se ID falhar (compatibilidade)
+        if indice_encontrado == -1:
+            id_sessao = validar_id(dados_do_front.get('idPsicologo'))
+            data, horarioDoFront = validar_data_hora(dados_do_front.get('data'), dados_do_front.get('horario'))
+            indice_encontrado, _ = pesquisaDataHorario(dados, data, horarioDoFront, id_sessao)
 
-    @staticmethod
-    @tratar_erros
-    def editarReserva():
-        return Psicologo._editarReservaOriginal()
+        if indice_encontrado is not None and indice_encontrado != -1:
+            consulta_removida = dados.pop(indice_encontrado)
+            with open(CONSULTAS_DB, 'w') as f:
+                json.dump(dados, f)
+            return jsonify({'mensagem': 'Horário excluído com sucesso', 'consulta': consulta_removida}) 
+            
+        return jsonify({'mensagem': 'Consulta não encontrada para exclusão'}), 404
 
     @staticmethod
     def get_consultas_do_psicologo(id_psicologo):
         dados_completos = carregar_dados(CONSULTAS_DB)
         dados_filtrados = []
+        
+        try: id_psicologo = int(id_psicologo)
+        except: pass
+
         for consulta in dados_completos:
-            if consulta.get('idPsicologo') == id_psicologo:
+            c_id = consulta.get('idPsicologo')
+            try: c_id = int(c_id)
+            except: pass
+
+            if c_id == id_psicologo:
                 try:
                     validar_data_hora(consulta.get('data'), consulta.get('horario'))
                     dados_filtrados.append(consulta)
@@ -189,7 +231,12 @@ class Psicologo:
         dados_do_front = request.get_json()
         id_psicologo = validar_id(dados_do_front.get('idPsicologo'))
         todosOsHorarios = Psicologo.get_consultas_do_psicologo(id_psicologo)
-        horariosReservados = [h for h in todosOsHorarios if h.get('reservado')]
+        
+        # FIX: Só mostra na Agenda se estiver CONFIRMADA
+        horariosReservados = [
+            h for h in todosOsHorarios 
+            if h.get('reservado') and h.get('status') == 'confirmada'
+        ]
         return jsonify(horariosReservados)
     
     @staticmethod
@@ -198,6 +245,7 @@ class Psicologo:
         dados_do_front = request.get_json()
         id_psicologo = validar_id(dados_do_front.get('idPsicologo'))
         todosOsHorarios = Psicologo.get_consultas_do_psicologo(id_psicologo)
+        # Lista horários que NÃO estão reservados (Livre)
         horariosLivres = [h for h in todosOsHorarios if not h.get('reservado')]
         return jsonify(horariosLivres)
     
@@ -209,16 +257,19 @@ class Psicologo:
         if idSessao is None: return jsonify({'mensagem': 'Id da sessão não informado'}), 404
         
         dadosConsultas = carregar_dados(CONSULTAS_DB)
-        listaSolicitacoes = [
-            dado for dado in dadosConsultas 
-            if dado['idPsicologo'] == idSessao 
-            and dado.get('reservadoPorEstudante')
-            and (dado.get('status') == 'pendente' or 'status' not in dado)
-        ]
-
-        if not listaSolicitacoes:
-            return jsonify({'mensagem': 'Nenhuma solicitação encontrada'}), 404
+        listaSolicitacoes = []
         
+        for dado in dadosConsultas:
+            c_id = dado.get('idPsicologo')
+            try: c_id = int(c_id)
+            except: pass
+            
+            # FIX: Mostra no sino se for reservado pelo aluno E status for pendente
+            if (c_id == idSessao and 
+                dado.get('reservadoPorEstudante') and 
+                (dado.get('status') == 'pendente' or 'status' not in dado)):
+                listaSolicitacoes.append(dado)
+
         return jsonify(listaSolicitacoes)
 
     @staticmethod
@@ -256,7 +307,11 @@ class Psicologo:
             
         return jsonify({'mensagem': 'Status atualizado com sucesso', 'consulta': consulta_encontrada})
 
-    # Métodos placeholders para manter compatibilidade com código anterior
+    # Métodos não utilizados no fluxo atual, mantidos para compatibilidade
+    @staticmethod
+    def editarHorario(): return Psicologo._editarHorarioOriginal()
+    @staticmethod
+    def editarReserva(): return Psicologo._editarReservaOriginal()
     def _editarHorarioOriginal(): pass 
     def _excluirHorarioOriginal(): pass
     def _editarReservaOriginal(): pass
