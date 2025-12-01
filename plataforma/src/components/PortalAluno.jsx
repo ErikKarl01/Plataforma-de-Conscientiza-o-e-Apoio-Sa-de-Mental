@@ -6,7 +6,8 @@ import {
   FaClipboardList,
   FaCheckCircle,
   FaRegClock,
-  FaTimesCircle
+  FaTimesCircle,
+  FaUserMd
 } from 'react-icons/fa';
 
 const API_URL = 'http://127.0.0.1:5000';
@@ -47,12 +48,13 @@ function PortalAluno() {
       }
   };
 
+  // --- BUSCAR HORÁRIOS DISPONÍVEIS ---
   const fetchHorariosLivres = async () => {
       try {
           const response = await fetch(`${API_URL}/listar_horarios_livres`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({})
+              body: JSON.stringify({}) // Corpo vazio para listar todos
           });
           if (response.ok) {
               const data = await response.json();
@@ -61,10 +63,11 @@ function PortalAluno() {
               setHorariosLivres([]);
           }
       } catch {
-          setError("Erro ao carregar horários.");
+          setError("Erro ao carregar horários. Verifique sua conexão.");
       }
   };
 
+  // --- BUSCAR MINHAS CONSULTAS (COM STATUS REAL) ---
   const fetchMinhasConsultas = async () => {
       try {
           const response = await fetch(`${API_URL}/listar_minhas_solicitacoes`, {
@@ -74,7 +77,12 @@ function PortalAluno() {
           });
           if (response.ok) {
               const data = await response.json();
-              const dataComStatus = data.map(c => ({ ...c, status: c.status || 'pendente' }));
+              // Agora usamos o status real vindo do backend.
+              // Fallback: se não tiver status, assume 'pendente' (para compatibilidade)
+              const dataComStatus = data.map(c => ({
+                  ...c,
+                  status: c.status || 'pendente' 
+              }));
               setMinhasConsultas(dataComStatus);
           }
       } catch (err) {
@@ -116,10 +124,11 @@ function PortalAluno() {
               throw new Error(data.mensagem || 'Erro ao reservar.');
           }
 
-          setSuccessMsg("Solicitação enviada com sucesso!");
+          setSuccessMsg("Solicitação enviada com sucesso! Aguarde a confirmação.");
           setHorarioSelecionado(null);
           setMotivoConsulta('');
-          setTimeout(() => setActiveTab('minhasConsultas'), 1500);
+          // Redireciona para a aba de "Minhas Consultas" para ver o status "Aguardando"
+          setTimeout(() => setActiveTab('minhasConsultas'), 2000);
 
       } catch (err) {
           setError(err.message);
@@ -127,7 +136,7 @@ function PortalAluno() {
   };
 
   const handleCancelar = async (consulta) => {
-      if(!window.confirm("Tem certeza que deseja cancelar?")) return;
+      if(!window.confirm("Tem certeza que deseja cancelar esta solicitação?")) return;
       try {
           const response = await fetch(`${API_URL}/cancelar_reserva`, {
               method: 'POST',
@@ -140,11 +149,13 @@ function PortalAluno() {
               })
           });
           if (response.ok) {
-              alert("Cancelado com sucesso.");
+              alert("Solicitação cancelada.");
               fetchMinhasConsultas();
+          } else {
+              throw new Error("Falha ao cancelar");
           }
       } catch {
-          alert("Erro ao cancelar.");
+          alert("Erro ao cancelar. Tente novamente.");
       }
   };
 
@@ -159,31 +170,65 @@ function PortalAluno() {
 
   const horariosAgrupados = agruparHorarios(horariosLivres);
 
+  // --- RENDERIZAÇÃO DOS CARDS BASEADA NO STATUS REAL ---
   const renderCardConsulta = (consulta) => {
       const dataFormatada = formatarDataExtenso(consulta.data, consulta.horario);
 
+      // 1. CONFIRMADA (Verde)
       if (consulta.status === 'confirmada') {
           return (
               <div key={consulta.id} className="status-card card-confirmada">
-                  <div className="status-header"><FaCheckCircle className="icon-status" /> Confirmada</div>
-                  <div className="status-body">{dataFormatada}</div>
+                  <div className="status-header">
+                      <FaCheckCircle className="icon-status" />
+                      <span>Confirmada</span>
+                  </div>
+                  <div className="status-body">
+                      {dataFormatada}
+                      <div style={{fontSize:'0.9rem', marginTop:'0.5rem', color:'#555'}}>
+                         Profissional: {consulta.nomePsi}
+                      </div>
+                  </div>
               </div>
           );
       }
+
+      // 2. REJEITADA (Vermelho)
       if (consulta.status === 'rejeitada') {
           return (
               <div key={consulta.id} className="status-card card-rejeitada">
-                  <div className="status-header"><FaTimesCircle className="icon-status" /> Rejeitada</div>
-                  <div className="status-body">{dataFormatada}</div>
-                  <button className="btn-tentar-novamente" onClick={() => setActiveTab('horariosDisponiveis')}>Tentar novamente</button>
+                  <div className="status-header">
+                      <FaTimesCircle className="icon-status" />
+                      <span>Rejeitada</span>
+                  </div>
+                  <div className="status-body">
+                      {dataFormatada}
+                      <div style={{fontSize:'0.9rem', marginTop:'0.5rem', color:'#555'}}>
+                         Profissional: {consulta.nomePsi}
+                      </div>
+                  </div>
+                  <button className="btn-tentar-novamente" onClick={() => setActiveTab('horariosDisponiveis')}>
+                      Tentar novamente
+                  </button>
               </div>
           );
       }
+
+      // 3. PENDENTE / AGUARDANDO (Laranja) - Default
       return (
           <div key={consulta.id} className="status-card card-aguardando">
-              <div className="status-header"><FaRegClock className="icon-status" /> Aguardando confirmação</div>
-              <div className="status-body">{dataFormatada}</div>
-              <button className="btn-cancelar-reserva" onClick={() => handleCancelar(consulta)}>Cancelar</button>
+              <div className="status-header">
+                  <FaRegClock className="icon-status" />
+                  <span>Aguardando confirmação</span>
+              </div>
+              <div className="status-body">
+                  {dataFormatada}
+                  <div style={{fontSize:'0.9rem', marginTop:'0.5rem', color:'#555'}}>
+                      Profissional: {consulta.nomePsi}
+                  </div>
+              </div>
+              <button className="btn-cancelar-reserva" onClick={() => handleCancelar(consulta)}>
+                  Cancelar
+              </button>
           </div>
       );
   };
@@ -205,7 +250,7 @@ function PortalAluno() {
 
       <div className="tab-navigation" style={{justifyContent: 'flex-start', marginBottom: '2rem'}}>
           <button className={`tab-button ${activeTab === 'horariosDisponiveis' ? 'active' : ''}`} onClick={() => setActiveTab('horariosDisponiveis')}>
-              <FaClipboardList /> Horarios Disponíveis
+              <FaClipboardList /> Horários Disponíveis
           </button>
           <button className={`tab-button ${activeTab === 'minhasConsultas' ? 'active' : ''}`} onClick={() => setActiveTab('minhasConsultas')}>
               <FaCheckCircle /> Minhas Consultas
@@ -214,11 +259,14 @@ function PortalAluno() {
 
       <main className="agenda-main" style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
 
+        {/* ABA: HORARIOS DISPONIVEIS */}
         {activeTab === 'horariosDisponiveis' && (
             <>
                 <div style={{ flex: 2 }}>
                     <div className="lista-horarios">
-                        {Object.keys(horariosAgrupados).length === 0 && (<p style={{padding: '1rem'}}>Nenhum horário disponível encontrado.</p>)}
+                        {Object.keys(horariosAgrupados).length === 0 && (
+                            <p style={{padding: '1rem'}}>Nenhum horário disponível encontrado.</p>
+                        )}
                         {Object.keys(horariosAgrupados).map(data => (
                             <div key={data} className="horario-group-item">
                                 <div className="horario-group-date">{data}</div>
@@ -227,6 +275,7 @@ function PortalAluno() {
                                         <button key={h.id} className={`horario-chip-btn ${horarioSelecionado?.id === h.id ? 'selected' : ''}`} onClick={() => handleSelecionarHorario(h)}>
                                             <div className="chip-time"><FaRegClock /> {h.horario}</div>
                                             <div className="chip-duration">{h.duracao || 50} minutos</div>
+                                            <div style={{fontSize:'0.7rem', color:'#888', marginTop:'4px'}}>{h.nomePsi}</div>
                                         </button>
                                     ))}
                                 </div>
@@ -245,6 +294,10 @@ function PortalAluno() {
                                     <strong>{horarioSelecionado.data}</strong>
                                     <span className="resumo-hora">{horarioSelecionado.horario}</span>
                                     <span className="resumo-duracao">Duração {horarioSelecionado.duracao || 50}min</span>
+                                    <span style={{fontSize:'0.8rem', marginTop:'0.5rem', color:'#333'}}>
+                                        <FaUserMd style={{marginRight:'5px'}}/> 
+                                        {horarioSelecionado.nomePsi}
+                                    </span>
                                 </div>
                                 <div className="resumo-body">
                                     <textarea className="resumo-textarea" placeholder="Descreva brevemente o motivo da consulta..." value={motivoConsulta} onChange={(e) => setMotivoConsulta(e.target.value)}></textarea>
@@ -264,6 +317,7 @@ function PortalAluno() {
             </>
         )}
 
+        {/* ABA: MINHAS CONSULTAS */}
         {activeTab === 'minhasConsultas' && (
             <div style={{ width: '100%' }}>
                 {minhasConsultas.length === 0 ? (

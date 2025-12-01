@@ -4,7 +4,8 @@
   --text-color: #333;
   --card-bg: #FFFFFF;
   --border-color: #e0e0e0;
-  --danger-color: #E53935; 
+  --danger-color: #E53935;
+  --secondary-color: #4CAF50;
 }
 
 body {
@@ -28,6 +29,7 @@ h1, h2, h3, p {
   margin: 0;
 }
 
+/* --- Layout Geral e Containers --- */
 .container {
   width: 100%;
   max-width: 800px;
@@ -79,6 +81,7 @@ h1, h2, h3, p {
   color: #555;
 }
 
+/* --- Seleção de Cadastro (Cards) --- */
 .selection-container {
   display: flex;
   justify-content: center;
@@ -117,6 +120,7 @@ h1, h2, h3, p {
   font-weight: 600;
 }
 
+/* --- Formulários (Login, Cadastro) --- */
 .form-container {
   background-color: var(--card-bg);
   border-radius: 12px;
@@ -172,6 +176,23 @@ h1, h2, h3, p {
   box-shadow: 0 0 0 2px rgba(0, 121, 107, 0.2);
 }
 
+/* Input com ícone (Login) */
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon .input-icon {
+  position: absolute;
+  left: 1rem;
+  color: #999;
+}
+
+.input-with-icon input {
+  padding-left: 2.5rem;
+}
+
 .submit-button {
   width: 100%;
   padding: 1rem;
@@ -188,6 +209,11 @@ h1, h2, h3, p {
 
 .submit-button:hover {
   background-color: #004D40; 
+}
+
+.submit-button:disabled {
+  background-color: #9E9E9E;
+  cursor: not-allowed;
 }
 
 .message-container {
@@ -209,18 +235,25 @@ h1, h2, h3, p {
   border: 1px solid #c3e6cb;
 }
 
-.submit-button:disabled {
-  background-color: #9E9E9E;
-  cursor: not-allowed;
+.cadastro-link-text {
+  font-size: 0.9rem;
+  color: #555;
+  text-align: center;
 }
 
+.link-highlight {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* --- Portais (Agenda e Aluno) - Layout Principal --- */
 .agenda-container {
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
 }
 
-/* Agenda Header (CABEÇALHO) */
 .agenda-header {
   display: flex;
   justify-content: space-between;
@@ -274,7 +307,7 @@ h1, h2, h3, p {
   gap: 1.5rem;
 }
 
-/* --- Navegação por Abas (Tab Navigation) --- */
+/* --- Navegação por Abas (Tabs) --- */
 .tab-navigation {
     display: flex;
     align-items: center;
@@ -299,11 +332,7 @@ h1, h2, h3, p {
     transition: color 0.2s ease;
 }
 
-.tab-button:hover {
-    color: var(--primary-color);
-}
-
-.tab-button.active {
+.tab-button:hover, .tab-button.active {
     color: var(--primary-color);
 }
 
@@ -323,7 +352,7 @@ h1, h2, h3, p {
     gap: 1rem;
 }
 
-/* Sino de Notificação MANTIDO */
+/* Sino de Notificação (Psicólogo) */
 .notification-icon-container {
     position: relative;
     cursor: pointer;
@@ -344,7 +373,7 @@ h1, h2, h3, p {
     line-height: 1;
 }
 
-/* Estilos para os Botões de Ação */
+/* --- Botões de Ação Globais --- */
 .btn-nova-consulta, .btn-adicionar-horario {
   display: flex;
   align-items: center;
@@ -364,7 +393,37 @@ h1, h2, h3, p {
   background-color: #004D40;
 }
 
-/* --- Formulários (Nova Consulta E Adicionar Horário) --- */
+.btn-adicionar, .btn-salvar, .btn-confirmar {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--card-bg);
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-cancelar {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #555;
+  background-color: #f0f0f0;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-adicionar:hover, .btn-salvar:hover, .btn-confirmar:hover {
+  background-color: #004D40;
+}
+
+.btn-cancelar:hover {
+  background-color: #e0e0e0;
+}
+
+/* --- Formulários Internos (Agenda) --- */
 .form-nova-consulta, .form-novo-horario {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -393,11 +452,6 @@ h1, h2, h3, p {
   margin-bottom: 1rem;
 }
 
-.form-group-full label {
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
 .form-group-full input {
   width: 100%;
   padding: 0.8rem 1rem;
@@ -407,17 +461,11 @@ h1, h2, h3, p {
   box-sizing: border-box; 
 }
 
-/* Layout de 3 colunas para Data, Hora, Duração */
 .form-grid-horario {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     gap: 1rem;
     margin-bottom: 1.5rem;
-}
-
-.form-grid-horario .form-group input[type="date"],
-.form-grid-horario .form-group input[type="time"] {
-  color: #555;
 }
 
 .form-actions {
@@ -427,37 +475,7 @@ h1, h2, h3, p {
   justify-content: flex-end; 
 }
 
-.btn-adicionar, .btn-salvar {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--card-bg);
-  background-color: var(--primary-color);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.btn-cancelar {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #555;
-  background-color: #f0f0f0;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.btn-adicionar:hover, .btn-salvar:hover {
-  background-color: #004D40;
-}
-
-.btn-cancelar:hover {
-  background-color: #e0e0e0;
-}
-
-/* --- Lista de Consultas Reservadas (Minha Agenda) --- */
+/* --- Listas de Consultas e Itens --- */
 .lista-consultas {
   display: flex;
   flex-direction: column;
@@ -509,6 +527,7 @@ h1, h2, h3, p {
   gap: 0.5rem;
 }
 
+/* Botões de Ação na Lista */
 .btn-deletar {
   background: none;
   border: none;
@@ -522,7 +541,22 @@ h1, h2, h3, p {
   color: #C62828;
 }
 
-/* --- Lista de Horários Disponíveis (Aba Meus Horários) --- */
+.btn-aceitar, .btn-recusar {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.btn-aceitar { background-color: var(--secondary-color); }
+.btn-recusar { background-color: var(--danger-color); }
+.btn-aceitar:hover, .btn-recusar:hover { opacity: 0.9; }
+
+/* --- Lista de Horários Agrupados (Visual do Psicólogo e Aluno) --- */
 .lista-horarios h3 {
     font-size: 1.5rem;
     font-weight: 600;
@@ -568,12 +602,6 @@ h1, h2, h3, p {
     border: none;
 }
 
-.horario-time-chip .duracao-min {
-    background-color: transparent;
-    color: #555;
-    padding: 0; 
-}
-
 .btn-deletar-horario {
     background: none;
     border: none;
@@ -584,12 +612,258 @@ h1, h2, h3, p {
     margin-left: 0.5rem; 
 }
 
-.btn-deletar-horario:hover {
-    color: #C62828;
+/* --- Solicitações do Psicólogo (Lista no Sino) --- */
+.solicitacoes-container {
+    background-color: var(--card-bg);
+    border: 1px solid #FFECB3; 
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
 }
 
+.solicitacoes-container h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
 
-/* --- Estilos do Home (Antigos, mantidos) --- */
+.solicitacao-item {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 0;
+}
+
+.solicitacao-info {
+    flex-basis: 60%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.solicitacao-actions {
+    flex-basis: 40%;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.causa-tag {
+    font-weight: 500;
+    color: #FF9800; 
+    font-size: 0.85rem;
+}
+
+/* ======================================================= */
+/* ESTILOS ESPECÍFICOS DO PORTAL DO ALUNO */
+/* ======================================================= */
+
+/* Chips de Horário (Botões de Seleção) */
+.horario-chip-btn {
+    background-color: #F5F5F5;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    padding: 0.8rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    color: #333;
+}
+
+.horario-chip-btn:hover {
+    background-color: #EEEEEE;
+    border-color: #BDBDBD;
+}
+
+.horario-chip-btn.selected {
+    background-color: #E0F2F1; /* Verde claro suave */
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.chip-time {
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.2rem;
+}
+
+.chip-duration {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Card Lateral de Resumo (Sticky) */
+.resumo-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 2rem; 
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.resumo-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #888;
+    text-align: center;
+}
+
+.resumo-header {
+    background-color: #E0F2F1;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid var(--primary-color);
+    font-size: 0.9rem;
+    color: #555;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.resumo-header strong {
+    font-size: 1rem;
+    color: #333;
+    display: block;
+    margin-top: 0.2rem;
+}
+
+.resumo-hora {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.resumo-duracao {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.resumo-textarea {
+    width: 100%;
+    height: 80px;
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    resize: none;
+    font-family: inherit;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    box-sizing: border-box;
+}
+
+.resumo-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.btn-confirmar {
+    width: 100%;
+    border-radius: 25px;
+}
+
+/* Cards de Status (Minhas Consultas - Aluno) */
+.lista-status-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.status-card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    position: relative;
+    border: 1px solid transparent; 
+    flex-wrap: wrap; 
+}
+
+/* Estados */
+.card-confirmada { border-color: #A5D6A7; }
+.card-confirmada .icon-status { color: #4CAF50; }
+
+.card-aguardando { border-color: #FFCC80; }
+.card-aguardando .icon-status { color: #FF9800; }
+
+.card-rejeitada { border-color: #EF9A9A; }
+.card-rejeitada .icon-status { color: #E53935; }
+
+.status-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #333;
+    flex-basis: 100%; 
+    margin-bottom: 0.5rem;
+}
+
+.icon-status { font-size: 1.2rem; }
+
+.status-body {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #000;
+}
+
+.btn-cancelar-reserva, .btn-tentar-novamente {
+    background-color: #E57373; /* Vermelho suave */
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-cancelar-reserva:hover, .btn-tentar-novamente:hover {
+    opacity: 0.9;
+}
+
+.error-text {
+    color: var(--danger-color);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.success-text {
+    color: var(--secondary-color);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* --- Estilos da Home Page --- */
 .home-container {
   margin:0;
   width: 100%;
@@ -601,9 +875,6 @@ h1, h2, h3, p {
 }
 
 .home-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 1.5rem 2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -673,137 +944,18 @@ h1, h2, h3, p {
   color: #e5e7eb; 
 }
 
-@media (max-width: 600px) {
-  .home-main h1 {
-    font-size: 2.25rem;
-  }
-  .home-main p {
-    font-size: 1rem;
-  }
-  .home-header {
-    padding: 1rem;
-  }
-  .home-logo-link {
-    width: 50px;
-    height: 50px;
-    font-size: 2rem;
-  }
-  .home-login-btn {
-    padding: 0.6rem 1.25rem;
-  }
+/* Responsividade Geral */
+@media (max-width: 768px) {
+  .home-main h1 { font-size: 2.25rem; }
+  .home-main p { font-size: 1rem; }
+  .home-header { padding: 1rem; }
+  .home-logo-link { width: 50px; height: 50px; font-size: 2rem; }
+  .home-login-btn { padding: 0.6rem 1.25rem; }
 
-  /* --- Estilos da Aba Minhas Consultas (Cards de Status) --- */
-
-  .lista-status-cards {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-      width: 100%;
-  }
-
-  .status-card {
-      background-color: var(--card-bg);
-      border-radius: 12px;
-      padding: 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-      position: relative;
-      border: 1px solid transparent; /* Base para a borda colorida */
-      flex-wrap: wrap; /* Para responsividade */
-  }
-
-  /* 1. Card Confirmada (Verde) */
-  .card-confirmada {
-      border-color: #A5D6A7; /* Verde claro borda */
-  }
-  .card-confirmada .icon-status {
-      color: #4CAF50;
-  }
-
-  /* 2. Card Aguardando (Laranja/Marrom) */
-  .card-aguardando {
-      border-color: #FFCC80; /* Laranja claro borda */
-  }
-  .card-aguardando .icon-status {
-      color: #FF9800; /* Laranja icone */
-  }
-
-  /* 3. Card Rejeitada (Vermelho) */
-  .card-rejeitada {
-      border-color: #EF9A9A; /* Vermelho claro borda */
-  }
-  .card-rejeitada .icon-status {
-      color: #E53935; /* Vermelho icone */
-  }
-
-  /* Header do Card (Icone + Texto Status) */
-  .status-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-weight: 600;
-      font-size: 1rem;
-      color: #333;
-      flex-basis: 100%; /* Ocupa a linha de cima */
-      margin-bottom: 0.5rem;
-  }
-
-  .icon-status {
-      font-size: 1.2rem;
-  }
-
-  /* Corpo do Card (Data e Hora) */
-  .status-body {
-      font-size: 1.1rem;
-      font-weight: 500;
-      color: #000;
-  }
-
-  /* Botões Específicos */
-  .btn-cancelar-reserva {
-      background-color: #E57373; /* Vermelho suave */
-      color: white;
-      border: none;
-      padding: 0.6rem 1.5rem;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.2s;
-  }
-
-  .btn-cancelar-reserva:hover {
-      opacity: 0.9;
-  }
-
-  .btn-tentar-novamente {
-      background-color: #E57373; /* Vermelho suave */
-      color: white;
-      border: none;
-      padding: 0.6rem 1.5rem;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-  }
-
-  .btn-tentar-novamente:hover {
-      opacity: 0.9;
-  }
-
-  /* Ajustes no Mobile */
-  @media (max-width: 600px) {
-      .status-card {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 1rem;
-      }
-      .status-body {
-          margin-bottom: 0.5rem;
-      }
-      .btn-cancelar-reserva, .btn-tentar-novamente {
-          width: 100%;
-      }
-  }
+  /* Ajustes Mobile do Portal do Aluno */
+  .agenda-main { flex-direction: column; }
+  .resumo-card { position: static; width: 100%; box-sizing: border-box; }
+  .status-card { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .status-body { margin-bottom: 0.5rem; }
+  .btn-cancelar-reserva, .btn-tentar-novamente { width: 100%; }
 }
-

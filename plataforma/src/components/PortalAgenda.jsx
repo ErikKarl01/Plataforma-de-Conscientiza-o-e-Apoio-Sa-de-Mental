@@ -10,7 +10,7 @@ import {
   FaTrashAlt,
   FaCalendarAlt, 
   FaClock, 
-  FaBell // Sino mantido
+  FaBell 
 } from 'react-icons/fa';
 
 const API_URL = 'http://127.0.0.1:5000';
@@ -32,17 +32,14 @@ function PortalAgenda() {
   const [activeTab, setActiveTab] = useState('minhaAgenda');
   const [mostrarFormConsulta, setMostrarFormConsulta] = useState(false);
   const [mostrarFormHorario, setMostrarFormHorario] = useState(false);
+  const [mostrarNotificacoes, setMostrarNotificacoes] = useState(false); // Novo: Controla visibilidade da lista
 
   // --- Estados de Dados ---
   const [consultasReservadas, setConsultasReservadas] = useState([]);
   const [horariosLivres, setHorariosLivres] = useState([]);
+  const [solicitacoesPendentes, setSolicitacoesPendentes] = useState([]); // Novo: Agora armazena dados reais
   const [error, setError] = useState(null);
   
-  
-  const [solicitacoesPendentes] = useState([]);
-  //lembrar de implementar essa função aqui e nao a de cima quando for fazer o aluno
- // const [solicitacoesPendentes, setSolicitacoesPendentes] = useState([]);
-
   // --- Estados de Formulário (Marcar Consulta - Aba Minha Agenda) ---
   const [nomePaciente, setNomePaciente] = useState('');
   const [dataConsulta, setDataConsulta] = useState('');
@@ -78,6 +75,26 @@ function PortalAgenda() {
       setError(err.message);
     }
   };
+
+  // Busca as solicitações pendentes (para o sino)
+  const fetchSolicitacoes = async () => {
+      try {
+          const response = await fetch(`${API_URL}/listar_solicitacoes_atendimento`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ idPsicologo: ID_PSICOLOGO })
+          });
+          
+          if (response.ok) {
+              const data = await response.json();
+              setSolicitacoesPendentes(data);
+          } else {
+              setSolicitacoesPendentes([]); // Se não houver, zera a lista
+          }
+      } catch (err) {
+          console.error("Erro ao buscar solicitações:", err);
+      }
+  };
   
   const agruparHorariosPorData = (horarios) => {
     return horarios.reduce((acc, current) => {
@@ -98,10 +115,13 @@ function PortalAgenda() {
         return;
     }
     
+    // Sempre busca as solicitações para manter o sino atualizado
+    fetchSolicitacoes();
+
     if (activeTab === 'minhaAgenda') {
       fetchConsultas('listarConsultas', setConsultasReservadas);
     } else if (activeTab === 'meusHorarios') {
-      fetchConsultas('listarHorariosLivres', setHorariosLivres);
+      fetchConsultas('listarHorariosLivresPsi', setHorariosLivres);
     }
     
     setMostrarFormConsulta(false);
@@ -111,7 +131,38 @@ function PortalAgenda() {
 
 
   // ====================================================================
-  // FLUXO MINHA AGENDA (Reservar para paciente)
+  // AÇÕES DE STATUS (ACEITAR / RECUSAR)
+  // ====================================================================
+
+  const handleAtualizarStatus = async (idConsulta, novoStatus) => {
+      try {
+          const response = await fetch(`${API_URL}/atualizar_status_consulta`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                  idConsulta: idConsulta, 
+                  status: novoStatus 
+              })
+          });
+
+          if (!response.ok) {
+              throw new Error("Erro ao atualizar status.");
+          }
+
+          // Atualiza as listas localmente
+          fetchSolicitacoes(); // Atualiza o sino
+          fetchConsultas('listarConsultas', setConsultasReservadas); // Atualiza a agenda principal
+          
+          alert(`Consulta ${novoStatus === 'confirmada' ? 'confirmada' : 'recusada'} com sucesso.`);
+
+      } catch (err) {
+          setError(err.message);
+      }
+  };
+
+
+  // ====================================================================
+  // FLUXO MINHA AGENDA (Reservar manualmente)
   // ====================================================================
 
   const handleAddConsulta = async (e) => {
@@ -126,7 +177,7 @@ function PortalAgenda() {
     const dataFormatada = formatarDataParaAPI(dataConsulta);
 
     try {
-      // 1. Adicionar Horário (Disponibilizar) - Adiciona o slot livre
+      // 1. Adicionar Horário
       const resEtapa1 = await fetch(`${API_URL}/adicionarHorario`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -134,16 +185,15 @@ function PortalAgenda() {
           data: dataFormatada,
           horario: horarioConsulta,
           idPsicologo: ID_PSICOLOGO,
-          duracao: duracaoMarcarConsulta // Duração digitada
+          duracao: duracaoMarcarConsulta 
         })
       });
 
       if (!resEtapa1.ok) {
-        const errorData = await resEtapa1.json();
-        throw new Error(errorData.mensagem || 'Erro ao criar o horário no backend (Etapa 1).');
+        throw new Error('Erro ao criar o horário.');
       }
 
-      // 2. Marcar Consulta (Reservar para o paciente)
+      // 2. Marcar Consulta
       const resEtapa2 = await fetch(`${API_URL}/marcarConsulta`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -157,8 +207,7 @@ function PortalAgenda() {
       });
       
       if (!resEtapa2.ok) {
-        const errorData = await resEtapa2.json();
-        throw new Error(errorData.mensagem || 'Erro ao marcar o paciente no horário (Etapa 2).');
+        throw new Error('Erro ao marcar o paciente.');
       }
 
       const { consulta: consultaSalva } = await resEtapa2.json();
@@ -181,6 +230,8 @@ function PortalAgenda() {
   };
   
   const handleDeletarConsulta = async (consultaParaExcluir) => {
+    if(!window.confirm("Tem certeza que deseja excluir?")) return;
+    
     setError(null);
     try {
       const response = await fetch(`${API_URL}/removerConsulta`, {
@@ -189,20 +240,18 @@ function PortalAgenda() {
         body: JSON.stringify({
           idPsicologo: ID_PSICOLOGO,
           data: consultaParaExcluir.data,
-          horario: consultaParaExcluir.horario
+          horario: consultaParaExcluir.horario,
+          id: consultaParaExcluir.id // Importante enviar o ID para exclusão precisa
         })
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.mensagem || 'Erro ao excluir a consulta.');
+        throw new Error('Erro ao excluir a consulta.');
       }
 
-      if (consultaParaExcluir.reservado) {
-        setConsultasReservadas(prev => prev.filter(c => c.id !== consultaParaExcluir.id));
-      } else {
-        setHorariosLivres(prev => prev.filter(c => c.id !== consultaParaExcluir.id));
-      }
+      // Atualiza as listas
+      setConsultasReservadas(prev => prev.filter(c => c.id !== consultaParaExcluir.id));
+      setHorariosLivres(prev => prev.filter(c => c.id !== consultaParaExcluir.id));
 
     } catch (err) {
       setError(err.message);
@@ -218,7 +267,7 @@ function PortalAgenda() {
       setError(null);
       
       if (!dataNovoHorario || !horaNovoHorario || !duracaoNovoHorario) {
-          setError("Por favor, preencha todos os campos do horário.");
+          setError("Preencha todos os campos.");
           return;
       }
       
@@ -232,13 +281,12 @@ function PortalAgenda() {
                   data: dataFormatada,
                   horario: horaNovoHorario,
                   idPsicologo: ID_PSICOLOGO,
-                  duracao: duracaoNovoHorario // Duração digitada
+                  duracao: duracaoNovoHorario
               })
           });
 
           if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.mensagem || 'Erro ao adicionar o novo horário.');
+              throw new Error('Erro ao adicionar o novo horário.');
           }
 
           const { consulta: novoHorario } = await response.json();
@@ -272,6 +320,41 @@ function PortalAgenda() {
             <h2>Minha Agenda</h2>
             <p>Gerencie seus atendimentos e consultas</p>
             
+            {/* SEÇÃO DE NOTIFICAÇÕES (SÓ APARECE SE O BOTÃO DO SINO FOR CLICADO) */}
+            {mostrarNotificacoes && (
+                <div className="solicitacoes-container">
+                    <h3>Solicitações Pendentes</h3>
+                    {solicitacoesPendentes.length === 0 ? (
+                        <p style={{color: '#666'}}>Nenhuma solicitação nova.</p>
+                    ) : (
+                        solicitacoesPendentes.map(solicitacao => (
+                            <div key={solicitacao.id} className="solicitacao-item">
+                                <div className="solicitacao-info">
+                                    <strong>{solicitacao.nomePaciente}</strong>
+                                    <span>{solicitacao.emailPaciente}</span>
+                                    <p>Data: {solicitacao.data} às {solicitacao.horario}</p>
+                                    {solicitacao.causa && <p className="causa-tag">Causa: {solicitacao.causa}</p>}
+                                </div>
+                                <div className="solicitacao-actions">
+                                    <button 
+                                        className="btn-aceitar" 
+                                        onClick={() => handleAtualizarStatus(solicitacao.id, 'confirmada')}
+                                    >
+                                        Aceitar
+                                    </button>
+                                    <button 
+                                        className="btn-recusar" 
+                                        onClick={() => handleAtualizarStatus(solicitacao.id, 'rejeitada')}
+                                    >
+                                        Recusar
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            )}
+            
             {/* Formulário de Adicionar Nova Consulta (Marcar para paciente) */}
             {mostrarFormConsulta && (
               <div className="form-nova-consulta">
@@ -291,7 +374,6 @@ function PortalAgenda() {
                     />
                   </div>
                   
-                  {/* Grid de 3 colunas para Data, Horário e Duração */}
                   <div className="form-grid-horario"> 
                     <div className="form-group">
                       <label htmlFor="data">Data</label>
@@ -315,7 +397,6 @@ function PortalAgenda() {
                       />
                     </div>
                     
-                    {/* Duração como campo de entrada de número livre */}
                     <div className="form-group">
                       <label htmlFor="duracao-consulta">Duração (min)</label>
                       <input
@@ -328,7 +409,6 @@ function PortalAgenda() {
                         min="10"
                       />
                     </div>
-                    
                   </div>
 
                   <div className="form-actions">
@@ -347,9 +427,9 @@ function PortalAgenda() {
               </div>
             )}
             
-            {/* Lista de Consultas Reservadas */}
+            {/* Lista de Consultas Reservadas (Confirmadas) */}
             <div className="lista-consultas">
-              {consultasReservadas.length === 0 && !error && !mostrarFormConsulta && (
+              {consultasReservadas.length === 0 && !error && !mostrarFormConsulta && !mostrarNotificacoes && (
                 <p>Nenhuma consulta agendada.</p>
               )}
 
@@ -386,7 +466,6 @@ function PortalAgenda() {
             <>
                 <h2>Meus Horários</h2>
                 
-                {/* Formulário de Adicionar Horário Disponível */}
                 {mostrarFormHorario && (
                     <div className="form-novo-horario">
                         <h3>Adicionar horário</h3>
@@ -418,7 +497,6 @@ function PortalAgenda() {
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="duracao-novo-horario">Duração(min)</label>
-                                    {/* Duração como campo de entrada de número livre */}
                                     <input
                                         type="number"
                                         id="duracao-novo-horario"
@@ -447,7 +525,6 @@ function PortalAgenda() {
                     </div>
                 )}
                 
-                {/* Lista de Horários Cadastrados */}
                 <div className="lista-horarios">
                     <h3>Horários Cadastrados</h3>
                     {Object.keys(horariosAgrupados).length === 0 && !error && !mostrarFormHorario && (
@@ -516,8 +593,14 @@ function PortalAgenda() {
                 <FaClock /> Meus Horários
             </button>
             
-            {/* Sino de Notificação MANTIDO */}
-            <div className="notification-icon-container" onClick={() => setActiveTab('minhaAgenda')}>
+            {/* ÍCONE DE NOTIFICAÇÃO (SINO) */}
+            <div 
+                className="notification-icon-container" 
+                onClick={() => {
+                    setActiveTab('minhaAgenda');
+                    setMostrarNotificacoes(!mostrarNotificacoes); // Toggle visibility
+                }}
+            >
                 <FaBell className="notification-icon" />
                 {solicitacoesPendentes.length > 0 && (
                     <span className="notification-badge">{solicitacoesPendentes.length}</span>

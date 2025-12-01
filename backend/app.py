@@ -97,5 +97,10 @@ def listar_horarios_livres_psi():
 def listar_solicitacoes_atendimento():
     return Psicologo.listarSolicitacoesAtendimento()
 
+# --- Nova rota: atualizar status de consulta ---
+@app.route('/atualizar_status_consulta', methods=['POST'])
+def atualizar_status_consulta():
+    return Psicologo.atualizarStatusConsulta()
+
 if __name__ == '__main__':
     app.run(debug=True)

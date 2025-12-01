@@ -13,7 +13,6 @@ from .Validacao import (
     validar_causa
 )
 
-# Caminhos ajustados para o seu ambiente local (data/...)
 ESTUDANTE_DB = 'data/estudante.json'
 PSICOLOGO_DB = 'data/psicologos.json'
 
@@ -161,10 +160,9 @@ class Estudante:
         
         psicologo = pesquisarPsicologoPorNomeEmail(dados_psi, nomePsi, emailPsi)
         if not psicologo:
-             return jsonify({'mensagem': 'Psicólogo não encontrado'}), 404
-             
+            return jsonify({'mensagem': 'Psicólogo não encontrado'}), 404
+            
         index, consulta = pesquisaDataHorario(dados, data, horario, psicologo['id'])
-        
         if not consulta:
             return jsonify({'mensagem': 'Data/Horário não encontrados'}), 404
         
@@ -177,7 +175,8 @@ class Estudante:
             'emailPaciente': emailPaci,
             'reservado': True,
             'reservadoPorEstudante': True,
-            'causa': causa
+            'causa': causa,
+            'status': 'pendente'  # NOVO CAMPO STATUS
         })
         dados[index] = consulta
         
@@ -200,19 +199,18 @@ class Estudante:
         
         psicologo = pesquisarPsicologoPorNomeEmail(dados_psi, nomePsi, emailPsi)
         if not psicologo:
-             return jsonify({'mensagem': 'Psicólogo não encontrado'}), 404
-             
+            return jsonify({'mensagem': 'Psicólogo não encontrado'}), 404
+            
         index, consulta = pesquisaDataHorario(dados, data, horario, psicologo['id'])
-        
         if not consulta:
             return jsonify({'mensagem': 'Agendamento não encontrado'}), 404
         
         if not consulta.get('reservado'):
-             return jsonify({'mensagem': 'Horário não está reservado'}), 409
+            return jsonify({'mensagem': 'Horário não está reservado'}), 409
         
         consulta.update({
             'nomePaciente': '', 'telPaciente': '', 'emailPaciente': '',
-            'reservado': False, 'reservadoPorEstudante': False, 'idEstudante': '', 'causa': ''
+            'reservado': False, 'reservadoPorEstudante': False, 'idEstudante': '', 'causa': '', 'status': 'livre'
         })
         dados[index] = consulta
         
@@ -245,7 +243,6 @@ class Estudante:
     def _pesquisar_generico(funcao_filtro, valor):
         dados_psi = carregar_dados(PSICOLOGO_DB)
         dados_con = carregar_dados(CONSULTAS_DB)
-        # Cria mapa com OBJETO COMPLETO do psicologo para ter nome e email
         mapa_psi = {psi['id']: psi for psi in dados_psi}
         
         retorno = []
@@ -262,14 +259,11 @@ class Estudante:
     @staticmethod
     @tratar_erros
     def listarHorariosLivres():
-        # Alterado para listar GERAL se não houver filtro
         d = request.get_json()
         
-        # Se vier vazio ou sem nome/email, lista todos os disponíveis de todos os psicólogos
         if not d or (not d.get('nome') and not d.get('email')):
             dados_psi = carregar_dados(PSICOLOGO_DB)
             dados_con = carregar_dados(CONSULTAS_DB)
-            # Mapa id -> {nome, email}
             mapa_psi = {p['id']: {'nome': p['nome'], 'email': p['email']} for p in dados_psi}
             
             livres_geral = []
@@ -284,7 +278,6 @@ class Estudante:
             
             return jsonify(sorted(livres_geral, key=chaveDeOrdenacao))
 
-        # Se tiver filtros, mantém a lógica antiga de buscar específico
         nome = validar_nome(d.get('nome'))
         email = validar_email_func(d.get('email'))
         
@@ -295,7 +288,6 @@ class Estudante:
             return jsonify({"erro": "Psicologo não encontrado"}), 404
 
         todos = Psicologo.get_consultas_do_psicologo(psi['id'])
-        # Aqui também enriquecemos com os dados do psi para o front
         retorno = []
         for h in todos:
             if not h.get('reservado'):
@@ -316,7 +308,6 @@ class Estudante:
         id_est = validar_id(d.get('id'))
         dados_con = carregar_dados(CONSULTAS_DB)
         dados_psi = carregar_dados(PSICOLOGO_DB)
-        # Mapa agora guarda o objeto completo ou dict com email para uso futuro
         mapa_psi = {p['id']: {'nome': p['nome'], 'email': p['email']} for p in dados_psi}
         
         lista = []
@@ -326,7 +317,7 @@ class Estudante:
                 psi_info = mapa_psi.get(c.get('idPsicologo'))
                 if psi_info:
                     c_display['nomePsi'] = psi_info['nome']
-                    c_display['emailPsi'] = psi_info['email'] # <--- Adicionado Email
+                    c_display['emailPsi'] = psi_info['email']
                 else:
                     c_display['nomePsi'] = 'N/A'
                     c_display['emailPsi'] = ''
