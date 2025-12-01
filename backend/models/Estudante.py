@@ -1,14 +1,39 @@
 from flask import request, jsonify
 import json
-from .CarregarDados import carregar_dados
+from functools import wraps
 from werkzeug.security import generate_password_hash
-from .Psicologo import Psicologo, PSICOLOGO_DB, CONSULTAS_DB, pesquisaDataHorario, chaveDeOrdenacao
+from .CarregarDados import carregar_dados
+from .Psicologo import Psicologo, CONSULTAS_DB, pesquisaDataHorario, chaveDeOrdenacao
+from .Validacao import (
+    validar_nome, 
+    validar_email_func, 
+    validar_telefone, 
+    validar_data_hora, 
+    validar_id,
+    validar_causa
+)
 
+# Caminhos ajustados para o seu ambiente local (data/...)
 ESTUDANTE_DB = 'data/estudante.json'
+PSICOLOGO_DB = 'data/psicologos.json'
+
+def tratar_erros(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except ValueError as e:
+            return jsonify({'erro': str(e)}), 400
+        except Exception as e:
+            return jsonify({'erro': f'Erro interno: {str(e)}'}), 500
+    return wrapper
 
 def pesquisarPsicologoPorNomeEmail(dadosBanco, nome, email):
+    nome_norm = nome.strip().lower()
+    email_norm = email.strip().lower()
     for dado in dadosBanco:
-        if dado['nome'] == nome and dado['email'] == email:
+        if dado['nome'].strip().lower() == nome_norm and \
+           dado['email'].strip().lower() == email_norm:
             return dado
     return None
 
@@ -18,192 +43,255 @@ def pesquisaEstudante(dados, id):
             return index, estudante
     return (None, None)
 
-def pesquisaDataHorarioPorHorario(dados, horario):
-    return [u for u in dados if u.get('horario') == horario]
-
 def pesquisaDataHorarioPorData(dados, data):
     return [u for u in dados if u.get('data') == data]
 
+def pesquisaDataHorarioPorHorario(dados, horario):
+    return [u for u in dados if u.get('horario') == horario]
 
 class Estudante:
     @staticmethod
+    @tratar_erros
     def cadastrar():
-        dados_do_front = request.get_json()
+        d = request.get_json()
         
-        nome = dados_do_front.get('nome')
-        email = dados_do_front.get('email')
-        senha = dados_do_front.get('senha')
-        telefone = dados_do_front.get('telefone')
+        nome = validar_nome(d.get('nome'))
+        email = validar_email_func(d.get('email'))
+        telefone = validar_telefone(d.get('telefone'))
+        senha = d.get('senha')
+        
+        if not senha or not senha.strip():
+            raise ValueError("A senha não pode estar vazia")
         
         novo_usuario = {'nome': nome, 'email': email, 'telefone': telefone}
-        novo_usuario['senha'] = generate_password_hash(senha) 
+        novo_usuario['senha'] = generate_password_hash(senha.strip())
         
         dados = carregar_dados(ESTUDANTE_DB)
-            
-        novo_id = (max((u.get('id', -1) for u in dados), default=-1) + 1)
-        novo_usuario['id'] = novo_id 
+        novo_usuario['id'] = (max((u.get('id', -1) for u in dados), default=-1) + 1)
         dados.append(novo_usuario)
         
         with open(ESTUDANTE_DB, 'w') as f:
             json.dump(dados, f)
             
         return jsonify({'mensagem': 'Usuário salvo com sucesso', 'usuario': novo_usuario})
-    
+
     @staticmethod
+    @tratar_erros
     def editarEstudante():
-        dados_do_front = request.get_json()
+        d = request.get_json()
         
-        nome = dados_do_front.get('nome')
-        email = dados_do_front.get('email')
-        telefone = dados_do_front.get('telefone')
-        
-        if not dados_do_front or 'id' not in dados_do_front:
-            return jsonify({'erro': 'Id não fornecido no corpo'}), 400
-        
-        try:
-            id = int(dados_do_front['id'])
-        except: 
-            return jsonify({'erro': 'ID inválido'}), 400
+        if not d or 'id' not in d:
+            raise ValueError('Id não fornecido no corpo')
+            
+        id_est = validar_id(d['id'])
+        nome = validar_nome(d.get('nome'))
+        email = validar_email_func(d.get('email'))
+        telefone = validar_telefone(d.get('telefone'))
         
         dados = carregar_dados(ESTUDANTE_DB)
-        index, estudante = pesquisaEstudante(dados, id)
+        index, estudante = pesquisaEstudante(dados, id_est)
         
         if not estudante:
-            return jsonify({'erro': 'Estudante não encontrado'}), 400
+            return jsonify({'erro': 'Estudante não encontrado'}), 404
         
-        estudante['nome'] = nome
-        estudante['email'] = email
-        estudante['telefone'] = telefone
-        
+        estudante.update({'nome': nome, 'email': email, 'telefone': telefone})
         dados[index] = estudante
+        
         with open(ESTUDANTE_DB, 'w') as f:
             json.dump(dados, f)
             
-        return jsonify({'mensagem': 'Estudante modificado com sucesso', 'estudante': estudante})
-    
+        return jsonify({'mensagem': 'Estudante modificado', 'estudante': estudante})
+
     @staticmethod
+    @tratar_erros
     def excluirEstudante():
-        dados_do_front = request.get_json()
-        
-        if not dados_do_front or 'id' not in dados_do_front:
-            return jsonify({'erro': 'Id não fornecido no corpo'}), 400
-        
-        try:
-            id = int(dados_do_front['id'])
-        except: 
-            return jsonify({'erro': 'ID inválido'}), 400
-        
+        d = request.get_json()
+        if not d or 'id' not in d:
+            raise ValueError('Id não fornecido no corpo')
+            
+        id_est = validar_id(d['id'])
         dados = carregar_dados(ESTUDANTE_DB)
-        index, estudante = pesquisaEstudante(dados, id)
+        index, estudante = pesquisaEstudante(dados, id_est)
         
         if not estudante:
-            return jsonify({'erro': 'Estudante não encontrado'}), 400
+            return jsonify({'erro': 'Estudante não encontrado'}), 404
         
         dados.pop(index)
         
         with open(ESTUDANTE_DB, 'w') as f:
             json.dump(dados, f)
             
-        return jsonify({'mensagem': 'Estudante excluído com sucesso', 'estudante': estudante})
-    
+        return jsonify({'mensagem': 'Estudante excluído', 'estudante': estudante})
+
     @staticmethod
+    @tratar_erros
     def pesquisarPorNome():
-        dados_do_front = request.get_json()
+        d = request.get_json()
+        nome = validar_nome(d.get('nome'))
+        email = validar_email_func(d.get('email'))
         
-        nome = dados_do_front.get('nome')
-        email = dados_do_front.get('email')
-        
-        dados_psicologos = carregar_dados(PSICOLOGO_DB)
-        psicologo = pesquisarPsicologoPorNomeEmail(dados_psicologos, nome, email)
+        dados_psi = carregar_dados(PSICOLOGO_DB)
+        psicologo = pesquisarPsicologoPorNomeEmail(dados_psi, nome, email)
         
         if not psicologo:
-            return jsonify({'mensagem': 'Psicólogo não encontrado'}) 
+            return jsonify({'mensagem': 'Psicólogo não encontrado'}), 404
+            
+        todos = Psicologo.get_consultas_do_psicologo(psicologo['id'])
+        livres = [h for h in todos if not h.get('reservado')]
         
-        
-        todos_horarios = Psicologo.get_consultas_do_psicologo(psicologo['id'])
-        
-        horariosLivres = []
-        for horario in todos_horarios:
-            if not horario.get('reservado'):
-                horariosLivres.append(horario)
-        
-        return jsonify(horariosLivres)
-    
+        return jsonify(livres)
+
     @staticmethod
+    @tratar_erros
     def reservarDataHorario():
-        dados_do_front = request.get_json()
+        d = request.get_json()
         
-        nome = dados_do_front.get('nome')
-        telefone = dados_do_front.get('telefone')
-        data = dados_do_front.get('data')
-        horario = dados_do_front.get('horario')
+        nomePaci = validar_nome(d.get('nomePaci'), "Nome do Paciente")
+        emailPaci = validar_email_func(d.get('emailPaci'), "Email do Paciente")
+        telPaci = validar_telefone(d.get('telefonePaci'), "Telefone do Paciente")
+        
+        nomePsi = validar_nome(d.get('nome'), "Nome do Psicólogo")
+        emailPsi = validar_email_func(d.get('email'), "Email do Psicólogo")
+        
+        data, horario = validar_data_hora(d.get('data'), d.get('horario'))
+        causa = validar_causa(d.get('causa'))
         
         dados = carregar_dados(CONSULTAS_DB)
+        dados_psi = carregar_dados(PSICOLOGO_DB)
         
-        index, dataHorarioEscolhido = pesquisaDataHorario(dados, data, horario)
+        psicologo = pesquisarPsicologoPorNomeEmail(dados_psi, nomePsi, emailPsi)
+        if not psicologo:
+             return jsonify({'mensagem': 'Psicólogo não encontrado'}), 404
+             
+        index, consulta = pesquisaDataHorario(dados, data, horario, psicologo['id'])
         
-        if not dataHorarioEscolhido:
-            return jsonify({'mensagem': 'Data/Horário não encontrados'})
+        if not consulta:
+            return jsonify({'mensagem': 'Data/Horário não encontrados'}), 404
         
-        dados[index]['reservado'] = True 
-        dados[index]['nomePaciente'] = nome
-        dados[index]['telPaciente'] = telefone
+        if consulta.get('reservado'):
+            return jsonify({'mensagem': 'Este horário já está reservado'}), 409
+        
+        consulta.update({
+            'nomePaciente': nomePaci,
+            'telPaciente': telPaci,
+            'emailPaciente': emailPaci,
+            'reservado': True,
+            'reservadoPorEstudante': True,
+            'causa': causa
+        })
+        dados[index] = consulta
         
         with open(CONSULTAS_DB, 'w') as f:
             json.dump(dados, f)
         
-        return jsonify({'mensagem': 'Data/Horário reservados com sucesso'})
-    
+        return jsonify({'mensagem': 'Reservado com sucesso', 'consulta': consulta})
+
+    @staticmethod
+    @tratar_erros
+    def cancelarReserva():
+        d = request.get_json()
+        
+        nomePsi = validar_nome(d.get('nome'), "Nome do Psicólogo")
+        emailPsi = validar_email_func(d.get('email'), "Email do Psicólogo")
+        data, horario = validar_data_hora(d.get('data'), d.get('horario'))
+        
+        dados = carregar_dados(CONSULTAS_DB)
+        dados_psi = carregar_dados(PSICOLOGO_DB)
+        
+        psicologo = pesquisarPsicologoPorNomeEmail(dados_psi, nomePsi, emailPsi)
+        if not psicologo:
+             return jsonify({'mensagem': 'Psicólogo não encontrado'}), 404
+             
+        index, consulta = pesquisaDataHorario(dados, data, horario, psicologo['id'])
+        
+        if not consulta:
+            return jsonify({'mensagem': 'Agendamento não encontrado'}), 404
+        
+        if not consulta.get('reservado'):
+             return jsonify({'mensagem': 'Horário não está reservado'}), 409
+        
+        consulta.update({
+            'nomePaciente': '', 'telPaciente': '', 'emailPaciente': '',
+            'reservado': False, 'reservadoPorEstudante': False, 'idEstudante': '', 'causa': ''
+        })
+        dados[index] = consulta
+        
+        with open(CONSULTAS_DB, 'w') as f:
+            json.dump(dados, f)
+        
+        return jsonify({'mensagem': 'Cancelado com sucesso', 'consulta': consulta})
+
     @staticmethod
     def pesquisarPorData():
-        dados_do_front = request.get_json()
-        data = dados_do_front.get('data')
-        
-        dadosPsi = carregar_dados(PSICOLOGO_DB)
-        dadosCon = carregar_dados(CONSULTAS_DB)
-        
-        mapa_psicologos = {psi['id']: psi['nome'] for psi in dadosPsi}
-        
-        lista_retornar = []
-        
-        filtroData = pesquisaDataHorarioPorData(dadosCon, data)
-        
-        for consulta in filtroData:
-            id_psi = consulta.get('idPsicologo')
-            nome_psi = mapa_psicologos.get(id_psi)
+        d = request.get_json() or {}
+        try:
+            dataValida, hora = validar_data_hora(d.get('data'), '00:00') 
+        except ValueError:
+            return jsonify({'erro': 'Data inválida'}), 400
             
-            if nome_psi:
-                consulta_com_nome = consulta.copy() 
-                consulta_com_nome['nomePsi'] = nome_psi
-                lista_retornar.append(consulta_com_nome)
-                
-        ordenada = sorted(lista_retornar, key=chaveDeOrdenacao)
-                
-        return jsonify(ordenada)
-    
+        return Estudante._pesquisar_generico(pesquisaDataHorarioPorData, dataValida)
+
     @staticmethod
     def pesquisarPorHorario():
-        dados_do_front = request.get_json()
-        horario = dados_do_front.get('horario')
-        
-        dadosPsi = carregar_dados(PSICOLOGO_DB)
-        dadosCon = carregar_dados(CONSULTAS_DB)
-        
-        mapa_psicologos = {psi['id']: psi['nome'] for psi in dadosPsi}
-        
-        lista_retornar = []
-        
-        filtroHorario = pesquisaDataHorarioPorHorario(dadosCon, horario)
-        
-        for consulta in filtroHorario:
-            id_psi = consulta.get('idPsicologo')
-            nome_psi = mapa_psicologos.get(id_psi)
+        d = request.get_json() or {}
+        try:
+            validar_data_hora('01/01/2000', d.get('horario'))
+        except ValueError:
+            return jsonify({'erro': 'Horário inválido'}), 400
             
-            if nome_psi:
-                consulta_com_nome = consulta.copy() 
-                consulta_com_nome['nomePsi'] = nome_psi
-                lista_retornar.append(consulta_com_nome)
+        return Estudante._pesquisar_generico(pesquisaDataHorarioPorHorario, d.get('horario'))
+
+    @staticmethod
+    def _pesquisar_generico(funcao_filtro, valor):
+        dados_psi = carregar_dados(PSICOLOGO_DB)
+        dados_con = carregar_dados(CONSULTAS_DB)
+        mapa_psi = {psi['id']: psi['nome'] for psi in dados_psi}
+        
+        retorno = []
+        for c in funcao_filtro(dados_con, valor):
+            nome = mapa_psi.get(c.get('idPsicologo'))
+            if nome:
+                c_copy = c.copy()
+                c_copy['nomePsi'] = nome
+                retorno.append(c_copy)
                 
-        ordenada = sorted(lista_retornar, key=chaveDeOrdenacao)
-                
-        return jsonify(ordenada)
+        return jsonify(sorted(retorno, key=chaveDeOrdenacao))
+
+    @staticmethod
+    @tratar_erros
+    def listarHorariosLivres():
+        d = request.get_json()
+        if not d: raise ValueError("Dados não fornecidos")
+        
+        nome = validar_nome(d.get('nome'))
+        email = validar_email_func(d.get('email'))
+        
+        dados = carregar_dados(PSICOLOGO_DB)
+        psi = pesquisarPsicologoPorNomeEmail(dados, nome, email) 
+        
+        if not psi:
+            return jsonify({"erro": "Psicologo não encontrado"}), 404
+
+        todos = Psicologo.get_consultas_do_psicologo(psi['id'])
+        return jsonify([h for h in todos if not h.get('reservado')])
+
+    @staticmethod
+    @tratar_erros
+    def listarMinhasSolicitacoes():
+        d = request.get_json()
+        if not d or 'id' not in d:
+             raise ValueError('Id do estudante não fornecido')
+        
+        id_est = validar_id(d.get('id'))
+        dados_con = carregar_dados(CONSULTAS_DB)
+        dados_psi = carregar_dados(PSICOLOGO_DB)
+        mapa_psi = {p['id']: p['nome'] for p in dados_psi}
+        
+        lista = []
+        for c in dados_con:
+            if c.get('reservadoPorEstudante') and c.get('idEstudante') == id_est:
+                c_display = c.copy()
+                c_display['nomePsi'] = mapa_psi.get(c.get('idPsicologo'), 'N/A')
+                lista.append(c_display)
+        
+        return jsonify(sorted(lista, key=chaveDeOrdenacao))

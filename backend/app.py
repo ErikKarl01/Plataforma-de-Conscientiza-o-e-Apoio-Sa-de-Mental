@@ -48,6 +48,18 @@ def pesquisa_horarioData_por_horario():
 def reservar_horarioData_por():
     return Estudante.reservarDataHorario()
 
+@app.route('/cancelar_reserva', methods=['POST'])
+def cancelar_reserva():
+    return Estudante.cancelarReserva()
+
+@app.route('/listar_horarios_livres', methods=['POST'])
+def listar_horarios_livres():
+    return Estudante.listarHorariosLivres()
+
+@app.route('/listar_minhas_solicitacoes', methods=['POST'])
+def listar_minhas_solicitacoes():
+    return Estudante.listarMinhasSolicitacoes()
+
 # --- Rotas de Psicólogo ---
 @app.route('/cadastrar', methods=['POST'])
 def cadastrar_psicologo():
@@ -77,9 +89,13 @@ def editar_reserva():
 def listar_consultas():
     return Psicologo.listarConsultas()
 
-@app.route('/listarHorariosLivres', methods=['POST'])
-def listar_horarios_livres():
-    return Psicologo.listarHorariosLivres()
+@app.route('/listarHorariosLivresPsi', methods=['POST'])
+def listar_horarios_livres_psi():
+    return Psicologo.listarHorariosLivresPsi()
+
+@app.route('/listar_solicitacoes_atendimento', methods=['POST'])
+def listar_solicitacoes_atendimento():
+    return Psicologo.listarSolicitacoesAtendimento()
 
 if __name__ == '__main__':
     app.run(debug=True)
