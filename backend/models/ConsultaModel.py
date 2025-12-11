@@ -1,7 +1,7 @@
 class ConsultaModel:
     def __init__(self, id, data, horario, idPsicologo, reservado=False, 
                  nomePaciente="", telPaciente="", emailPaciente="", 
-                 reservadoPorEstudante=False, idEstudante="", duracao=None, causa=""):
+                 reservadoPorEstudante=False, idEstudante="", duracao=None, causa="", cancelado=False):
         self.id = id
         self.data = data
         self.horario = horario
@@ -14,6 +14,7 @@ class ConsultaModel:
         self.idEstudante = idEstudante
         self.duracao = duracao
         self.causa = causa
+        self.cancelado = cancelado
 
     def to_dict(self):
         return {
@@ -28,5 +29,6 @@ class ConsultaModel:
             'reservadoPorEstudante': self.reservadoPorEstudante,
             'idEstudante': self.idEstudante,
             'duracao': self.duracao,
-            'causa': self.causa
+            'causa': self.causa,
+            'cancelado': self.cancelado
         }

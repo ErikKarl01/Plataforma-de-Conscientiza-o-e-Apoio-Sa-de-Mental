@@ -127,3 +127,25 @@ def listar_historico():
         return jsonify({'erro': str(e)}), 400
     except Exception as e:
         return jsonify({'erro': 'Erro interno'}), 500
+    
+@estudante_bp.route('/listar_minhas_solicitacoes', methods=['POST'])
+def listar_minhas_solicitacoes():
+    """
+    Rota para listar todas as solicitações de consulta feitas por um estudante específico.
+    Exemplo de URL: GET /estudante/12345/solicitacoes
+    """
+    d = request.get_json()
+    if not d or 'id' not in d:
+        raise ValueError('Id do estudante não fornecido')
+    
+    id_estudante = d.get('id')
+    
+    try:
+        solicitacoes = service_consulta.listar_solicitacoes_estudante(id_estudante)
+        return jsonify(solicitacoes), 200
+
+    except ValueError as e:
+        return jsonify({'erro': str(e)}), 400
+        
+    except Exception as e:
+        return jsonify({'erro': 'Erro interno ao processar solicitações.', 'detalhes': str(e)}), 500

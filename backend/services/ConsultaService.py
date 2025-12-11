@@ -105,7 +105,8 @@ class ConsultaService:
 
         consulta.update({
             'nomePaciente': '', 'telPaciente': '', 'emailPaciente': '',
-            'reservado': False, 'reservadoPorEstudante': False, 'idEstudante': '', 'causa': ''
+            'reservado': False, 'reservadoPorEstudante': False, 'idEstudante': '', 'causa': '',
+            'cancelado': True
         })
         return self.repo.update(index, consulta)
 
@@ -194,4 +195,20 @@ class ConsultaService:
         if not retorno:
             return []
 
+        return sorted(retorno, key=chaveDeOrdenacao)
+    
+    def listar_cancelados(self, id_psi):
+        id_psi = validar_id(id_psi)
+        todas = self.repo.get_all()
+        mapa_psi = self.psi_service.get_mapa_nomes()
+        
+        retorno = []
+        for c in todas:
+            if c.get('idPsicologo') == id_psi and c.get('cancelado') is True:
+                c_copy = c.copy()
+                retorno.append(c_copy)
+        
+        if not retorno:
+            return []
+            
         return sorted(retorno, key=chaveDeOrdenacao)

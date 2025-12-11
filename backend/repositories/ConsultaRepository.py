@@ -1,3 +1,5 @@
+"""Não esqueça, tem que criar uma lógica de notificação caso alguma consulta  seja desmarcada"""
+
 import json
 from datetime import datetime, timedelta
 from backend.utils.CarregarDados import carregar_dados
