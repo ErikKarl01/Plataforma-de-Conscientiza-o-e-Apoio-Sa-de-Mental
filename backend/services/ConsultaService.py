@@ -3,7 +3,7 @@ from repositories.ConsultaRepository import ConsultaRepository
 from services.PsicologoService import PsicologoService
 from services.EstudanteService import EstudanteService
 from utils.Validacao import (validar_data_hora, validar_duracao, validar_causa, 
-                                     validar_nome, validar_email_func, validar_telefone, validar_id)
+                             validar_nome, validar_email_func, validar_telefone, validar_id)
 
 def chaveDeOrdenacao(consulta): 
     try:
@@ -37,7 +37,6 @@ class ConsultaService:
         return self.repo.create(nova_consulta)
 
     def marcar_consulta_psi(self, dados):
-        # Lógica usada pelo Psicólogo para marcar manualmente
         data, horario = validar_data_hora(dados.get('data'), dados.get('horario'))
         nome_paci = validar_nome(dados.get('nomePaciente'), "Nome Paciente")
         tel_paci = validar_telefone(dados.get('telPaciente'), "Telefone Paciente")
@@ -49,8 +48,7 @@ class ConsultaService:
 
         index, consulta = self.repo.find_by_data_horario_psi(data, horario)
         if not consulta: return None
-
-        # Verifica se é estudante
+        
         _, estudante = self.est_service.buscar_por_nome_telefone(nome_paci, tel_paci)
         
         id_est = estudante['id'] if estudante else ''
@@ -80,8 +78,8 @@ class ConsultaService:
 
         index, consulta = self.repo.find_by_data_horario_psi(data, horario, psi['id'])
         
-        if not consulta: return 404 # Not found
-        if consulta.get('reservado'): return 409 # Conflict
+        if not consulta: return 404 
+        if consulta.get('reservado'): return 409 
 
         consulta.update({
             'nomePaciente': nome_paci, 'telPaciente': tel_paci, 'emailPaciente': email_paci,
@@ -101,11 +99,42 @@ class ConsultaService:
         if not consulta: return 404
         if not consulta.get('reservado'): return 409
 
+        consulta_backup = consulta.copy()
+        consulta_backup['dataExclusao'] = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        self.repo.adicionar_historico(consulta_backup)
+
         consulta.update({
             'nomePaciente': '', 'telPaciente': '', 'emailPaciente': '',
             'reservado': False, 'reservadoPorEstudante': False, 'idEstudante': '', 'causa': ''
         })
         return self.repo.update(index, consulta)
+
+    def recuperar_consulta(self, dados):
+        nome_psi = validar_nome(dados.get('nome'), "Nome Psicólogo")
+        email_psi = validar_email_func(dados.get('email'), "Email Psicólogo")
+        data, horario = validar_data_hora(dados.get('data'), dados.get('horario'))
+
+        psi = self.psi_service.buscar_por_nome_email(nome_psi, email_psi)
+        if not psi: raise ValueError('Psicólogo não encontrado')
+
+        index, consulta_atual = self.repo.find_by_data_horario_psi(data, horario, psi['id'])
+        if not consulta_atual: return 404
+        if consulta_atual.get('reservado'): return 409
+
+        consulta_hist = self.repo.recuperar_do_historico(data, horario, psi['id'])
+        if not consulta_hist: return 404
+
+        consulta_atual.update({
+            'nomePaciente': consulta_hist.get('nomePaciente'),
+            'telPaciente': consulta_hist.get('telPaciente'),
+            'emailPaciente': consulta_hist.get('emailPaciente'),
+            'reservado': True,
+            'reservadoPorEstudante': consulta_hist.get('reservadoPorEstudante'),
+            'idEstudante': consulta_hist.get('idEstudante'),
+            'causa': consulta_hist.get('causa')
+        })
+
+        return self.repo.update(index, consulta_atual)
 
     def listar_livres_por_psi_nome(self, nome_psi, email_psi):
         psi = self.psi_service.buscar_por_nome_email(nome_psi, email_psi)
@@ -127,7 +156,6 @@ class ConsultaService:
         return sorted(retorno, key=chaveDeOrdenacao)
 
     def buscar_generico(self, tipo, valor):
-        # tipo: 'data' ou 'horario'
         todas = self.repo.get_all()
         filtradas = [c for c in todas if c.get(tipo) == valor]
         mapa_psi = self.psi_service.get_mapa_nomes()
@@ -138,4 +166,32 @@ class ConsultaService:
                 c_copy = c.copy()
                 c_copy['nomePsi'] = mapa_psi[c['idPsicologo']]
                 retorno.append(c_copy)
+        return sorted(retorno, key=chaveDeOrdenacao)
+    
+    def consultar_historico_estudante(self, id_est):
+        id_est = validar_id(id_est)
+        todas = self.repo._get_historico()
+        mapa_psi = self.psi_service.get_mapa_nomes()
+        
+        retorno = []
+        for c in todas:
+            if c.get('idEstudante') == id_est:
+                c_copy = c.copy()
+                c_copy['nomePsi'] = mapa_psi.get(c.get('idPsicologo'), 'N/A')
+                retorno.append(c_copy)
+        
+        if not retorno:
+            return []
+            
+        return sorted(retorno, key=chaveDeOrdenacao)
+
+    def consultar_historico_psicologo(self, id_psi):
+        id_psi = validar_id(id_psi)
+        todas = self.repo._get_historico()
+        
+        retorno = [c for c in todas if c.get('idPsicologo') == id_psi]
+        
+        if not retorno:
+            return []
+
         return sorted(retorno, key=chaveDeOrdenacao)

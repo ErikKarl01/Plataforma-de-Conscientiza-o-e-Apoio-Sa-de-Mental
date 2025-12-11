@@ -4,7 +4,6 @@ from services.ConsultaService import ConsultaService
 from repositories.ConsultaRepository import ConsultaRepository
 from utils.Validacao import validar_id, validar_data_hora, validar_duracao, validar_causa
 
-# Define o grupo de rotas de Psicólogo
 psicologo_bp = Blueprint('psicologo_bp', __name__)
 
 service_psi = PsicologoService()
@@ -73,10 +72,27 @@ def excluir_horario():
         
         idx, consulta = repo_consulta.find_by_data_horario_psi(data, horario, id_sessao)
         if consulta:
+            # O repositorio.delete já cuida de mover para o histórico e limpar antigos (5 dias)
             repo_consulta.delete(idx)
             return jsonify({'mensagem': 'Horário excluído com sucesso', 'consulta': consulta})
         
         return jsonify({'mensagem': 'Data e horário não encontrados'}), 404
+    except ValueError as e:
+        return jsonify({'erro': str(e)}), 400
+
+@psicologo_bp.route('/recuperar_consulta', methods=['POST'])
+def recuperar_consulta():
+    try:
+        d = request.get_json()
+        # Esta função recupera do histórico e restaura a consulta
+        resultado = service_consulta.recuperar_consulta(d)
+        
+        if resultado == 404:
+            return jsonify({'mensagem': 'Histórico não encontrado ou psicólogo inválido'}), 404
+        if resultado == 409:
+            return jsonify({'mensagem': 'Horário já está ocupado novamente'}), 409
+            
+        return jsonify({'mensagem': 'Consulta recuperada com sucesso', 'consulta': resultado})
     except ValueError as e:
         return jsonify({'erro': str(e)}), 400
 
@@ -145,3 +161,17 @@ def listar_solicitacoes():
         return jsonify(solicitacoes)
     except ValueError as e:
         return jsonify({'erro': str(e)}), 400
+    
+@psicologo_bp.route('/listar_historico_psicologo', methods=['POST'])
+def listar_historico_psi():
+    try:
+        d = request.get_json()
+        if not d or 'idPsicologo' not in d: 
+            raise ValueError('Id do psicólogo não fornecido')
+            
+        resultado = service_consulta.consultar_historico_psicologo(d.get('idPsicologo'))
+        return jsonify(resultado)
+    except ValueError as e:
+        return jsonify({'erro': str(e)}), 400
+    except Exception as e:
+        return jsonify({'erro': 'Erro interno'}), 500

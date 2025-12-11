@@ -3,7 +3,6 @@ from services.EstudanteService import EstudanteService
 from services.ConsultaService import ConsultaService
 from utils.Validacao import validar_data_hora
 
-# Define o grupo de rotas de Estudante
 estudante_bp = Blueprint('estudante_bp', __name__)
 
 service_estudante = EstudanteService()
@@ -86,6 +85,7 @@ def reservar_horario():
 def cancelar_reserva():
     try:
         d = request.get_json()
+        # Chama a função que cancela e salva no histórico (com regra de 5 dias)
         res = service_consulta.cancelar_reserva(d)
         if res == 404: return jsonify({'mensagem': 'Agendamento não encontrado'}), 404
         if res == 409: return jsonify({'mensagem': 'Horário não está reservado'}), 409
@@ -113,3 +113,17 @@ def listar_solicitacoes():
         return jsonify(resultado)
     except ValueError as e:
         return jsonify({'erro': str(e)}), 400
+    
+@estudante_bp.route('/listar_historico_estudante', methods=['POST'])
+def listar_historico():
+    try:
+        d = request.get_json()
+        if not d or 'id' not in d:
+            raise ValueError('Id do estudante não fornecido')
+            
+        resultado = service_consulta.consultar_historico_estudante(d.get('id'))
+        return jsonify(resultado)
+    except ValueError as e:
+        return jsonify({'erro': str(e)}), 400
+    except Exception as e:
+        return jsonify({'erro': 'Erro interno'}), 500
