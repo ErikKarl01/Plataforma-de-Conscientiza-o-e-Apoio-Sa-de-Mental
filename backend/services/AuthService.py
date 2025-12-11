@@ -1,7 +1,7 @@
 from werkzeug.security import check_password_hash
 from email_validator import validate_email, EmailNotValidError
-from backend.repositories.EstudanteRepository import EstudanteRepository
-from backend.repositories.PsicologoRepository import PsicologoRepository
+from repositories.EstudanteRepository import EstudanteRepository
+from repositories.PsicologoRepository import PsicologoRepository
 
 class AuthService:
     def __init__(self):

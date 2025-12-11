@@ -1,6 +1,6 @@
 from werkzeug.security import generate_password_hash
-from backend.repositories.EstudanteRepository import EstudanteRepository
-from backend.utils.Validacao import validar_nome, validar_email_func, validar_telefone, validar_id
+from repositories.EstudanteRepository import EstudanteRepository
+from utils.Validacao import validar_nome, validar_email_func, validar_telefone, validar_id
 
 class EstudanteService:
     def __init__(self):

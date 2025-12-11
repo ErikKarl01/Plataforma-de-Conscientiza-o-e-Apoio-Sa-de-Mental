@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from backend.services.AuthService import AuthService
+from services.AuthService import AuthService
 
 # Define o grupo de rotas de Autenticação
 auth_bp = Blueprint('auth_bp', __name__)

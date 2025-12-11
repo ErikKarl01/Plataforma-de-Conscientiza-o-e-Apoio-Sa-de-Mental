@@ -1,8 +1,8 @@
 from datetime import datetime
-from backend.repositories.ConsultaRepository import ConsultaRepository
-from backend.services.PsicologoService import PsicologoService
-from backend.services.EstudanteService import EstudanteService
-from backend.utils.Validacao import (validar_data_hora, validar_duracao, validar_causa, 
+from repositories.ConsultaRepository import ConsultaRepository
+from services.PsicologoService import PsicologoService
+from services.EstudanteService import EstudanteService
+from utils.Validacao import (validar_data_hora, validar_duracao, validar_causa, 
                                      validar_nome, validar_email_func, validar_telefone, validar_id)
 
 def chaveDeOrdenacao(consulta): 

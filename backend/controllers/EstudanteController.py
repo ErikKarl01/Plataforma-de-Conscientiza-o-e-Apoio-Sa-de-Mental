@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
-from backend.services.EstudanteService import EstudanteService
-from backend.services.ConsultaService import ConsultaService
-from backend.utils.Validacao import validar_data_hora
+from services.EstudanteService import EstudanteService
+from services.ConsultaService import ConsultaService
+from utils.Validacao import validar_data_hora
 
 # Define o grupo de rotas de Estudante
 estudante_bp = Blueprint('estudante_bp', __name__)

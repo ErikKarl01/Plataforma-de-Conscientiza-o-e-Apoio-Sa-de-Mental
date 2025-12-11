@@ -2,9 +2,9 @@ from flask import Flask
 from flask_cors import CORS
 import os
 
-from backend.controllers.AuthController import auth_bp
-from backend.controllers.EstudanteController import estudante_bp
-from backend.controllers.PsicologoController import psicologo_bp
+from controllers.AuthController import auth_bp
+from controllers.EstudanteController import estudante_bp
+from controllers.PsicologoController import psicologo_bp
 
 app = Flask(__name__)
 CORS(app) 

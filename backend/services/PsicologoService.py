@@ -1,6 +1,6 @@
 from werkzeug.security import generate_password_hash
-from backend.repositories.PsicologoRepository import PsicologoRepository
-from backend.utils.Validacao import validar_nome, validar_email_func, validar_telefone
+from repositories.PsicologoRepository import PsicologoRepository
+from utils.Validacao import validar_nome, validar_email_func, validar_telefone
 
 class PsicologoService:
     def __init__(self):

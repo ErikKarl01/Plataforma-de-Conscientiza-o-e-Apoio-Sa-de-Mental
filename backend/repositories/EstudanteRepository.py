@@ -1,5 +1,5 @@
 import json
-from backend.utils.CarregarDados import carregar_dados
+from utils.CarregarDados import carregar_dados
 
 DB_PATH = 'data/estudante.json'
 

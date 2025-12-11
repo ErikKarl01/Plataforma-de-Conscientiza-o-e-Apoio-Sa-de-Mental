@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
-from backend.services.PsicologoService import PsicologoService
-from backend.services.ConsultaService import ConsultaService
-from backend.repositories.ConsultaRepository import ConsultaRepository
-from backend.utils.Validacao import validar_id, validar_data_hora, validar_duracao, validar_causa
+from services.PsicologoService import PsicologoService
+from services.ConsultaService import ConsultaService
+from repositories.ConsultaRepository import ConsultaRepository
+from utils.Validacao import validar_id, validar_data_hora, validar_duracao, validar_causa
 
 # Define o grupo de rotas de Psicólogo
 psicologo_bp = Blueprint('psicologo_bp', __name__)
