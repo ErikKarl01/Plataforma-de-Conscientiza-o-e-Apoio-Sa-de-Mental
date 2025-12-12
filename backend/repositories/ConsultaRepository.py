@@ -2,7 +2,7 @@
 
 import json
 from datetime import datetime, timedelta
-from backend.utils.CarregarDados import carregar_dados
+from utils.CarregarDados import carregar_dados
 
 DB_PATH = 'backend/data/consultas.json'
 DB_HIST = 'backend/data/historico.json'
