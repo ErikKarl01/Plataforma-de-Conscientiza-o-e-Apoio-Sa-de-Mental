@@ -2,105 +2,18 @@ from flask import Flask
 from flask_cors import CORS
 import os
 
-# 1. Importa as CLASSES dos seus arquivos de models
-from models.Psicologo import Psicologo
-from models.Estudante import Estudante
-from models.Login import Login
+from controllers.AuthController import auth_bp
+from controllers.EstudanteController import estudante_bp
+from controllers.PsicologoController import psicologo_bp
 
-# --- Configuração Central ---
 app = Flask(__name__)
-CORS(app)  # <-- ATIVA O CORS
+CORS(app) 
 
-# 2. Garante que TODOS os diretórios de dados existam
-os.makedirs('data', exist_ok=True)
+os.makedirs('backend/data', exist_ok=True)
 
-# --- Rotas de Login ---
-@app.route('/login', methods=['POST'])
-def fazer_login():
-    return Login.fazerLogin()
-
-# --- Rotas de Estudante ---
-@app.route('/cadastrar_estudante', methods=['POST'])
-def cadastrar_estudante():
-    return Estudante.cadastrar()
-
-@app.route('/editar_estudante', methods=['POST'])
-def editar_estudante():
-    return Estudante.editarEstudante()
-        
-@app.route('/excluir_estudante', methods=['POST'])
-def excluir_estudante():
-    return Estudante.excluirEstudante()
-
-@app.route('/pesquisar_por_nome', methods=['POST'])
-def pesquisa_horarioData_por_nome_do_psi():
-    return Estudante.pesquisarPorNome()
-
-@app.route('/pesquisar_por_data', methods=['POST'])
-def pesquisa_horarioData_por_data():
-    return Estudante.pesquisarPorData()
-
-@app.route('/pesquisar_por_horario', methods=['POST'])
-def pesquisa_horarioData_por_horario():
-    return Estudante.pesquisarPorHorario()
-
-@app.route('/reservar_data_horario', methods=['POST'])
-def reservar_horarioData_por():
-    return Estudante.reservarDataHorario()
-
-@app.route('/cancelar_reserva', methods=['POST'])
-def cancelar_reserva():
-    return Estudante.cancelarReserva()
-
-@app.route('/listar_horarios_livres', methods=['POST'])
-def listar_horarios_livres():
-    return Estudante.listarHorariosLivres()
-
-@app.route('/listar_minhas_solicitacoes', methods=['POST'])
-def listar_minhas_solicitacoes():
-    return Estudante.listarMinhasSolicitacoes()
-
-# --- Rotas de Psicólogo ---
-@app.route('/cadastrar', methods=['POST'])
-def cadastrar_psicologo():
-    return Psicologo.cadastrarPsicologo()
-
-@app.route('/adicionarHorario', methods=['POST'])
-def adicionar_horario(): 
-    return Psicologo.adicionarHorario()
-
-@app.route('/marcarConsulta', methods=['POST'])
-def marcar_consulta(): 
-    return Psicologo.marcarConsulta()
-
-@app.route('/modificarConsulta', methods=['POST'])
-def editar_horario():
-    return Psicologo.editarHorario()
-
-@app.route('/removerConsulta', methods=['POST'])
-def excluir_horario():
-    return Psicologo.excluirHorario()
-
-@app.route('/editarReserva', methods=['POST'])
-def editar_reserva():
-    return Psicologo.editarReserva()
-
-@app.route('/listarConsultas', methods=['POST'])
-def listar_consultas():
-    return Psicologo.listarConsultas()
-
-@app.route('/listarHorariosLivresPsi', methods=['POST'])
-def listar_horarios_livres_psi():
-    return Psicologo.listarHorariosLivresPsi()
-
-@app.route('/listar_solicitacoes_atendimento', methods=['POST'])
-def listar_solicitacoes_atendimento():
-    return Psicologo.listarSolicitacoesAtendimento()
-
-# --- Nova rota: atualizar status de consulta ---
-@app.route('/atualizar_status_consulta', methods=['POST'])
-def atualizar_status_consulta():
-    return Psicologo.atualizarStatusConsulta()
+app.register_blueprint(auth_bp)
+app.register_blueprint(estudante_bp)
+app.register_blueprint(psicologo_bp)
 
 if __name__ == '__main__':
     app.run(debug=True)
