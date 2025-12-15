@@ -1,168 +1,95 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaBrain } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { FaBrain, FaArrowLeft } from 'react-icons/fa';
 
-function CadastroPsicologo() {
-  const [nome, setNome] = useState('');
-  const [crp, setCrp] = useState('');
-  const [email, setEmail] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [senha, setSenha] = useState('');
-  const [confirmarSenha, setConfirmarSenha] = useState('');
+const API_URL = 'http://127.0.0.1:5000';
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [isSuccess, setIsSuccess] = useState(false);
-
+export default function CadastroPsicologo() {
   const navigate = useNavigate();
+  const [form, setForm] = useState({ nome: '', crp: '', email: '', telefone: '', senha: '', confirmSenha: '' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (senha !== confirmarSenha) {
-      setError('As senhas não coincidem.');
-      return;
-    }
-
-    setError(null);
-    setIsSuccess(false);
-    setIsLoading(true);
+    if (form.senha !== form.confirmSenha) return alert("As senhas não coincidem!");
 
     try {
-      const telefoneLimpo = telefone.replace(/\D/g, "");
-
-      const dataToSend = { nome, crp, email, telefone: telefoneLimpo, senha };
-
-      const response = await fetch('http://127.0.0.1:5000/cadastrar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dataToSend),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.erro || 'Falha no cadastro. Tente novamente.');
-      }
-
-      setIsSuccess(true);
-      setTimeout(() => navigate('/login'), 2000);
-
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }; // <-- FECHAMENTO CORRETO DA FUNÇÃO
+        const res = await fetch(`${API_URL}/cadastrar_psicologo`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(form)
+        });
+        const data = await res.json();
+        if(res.ok) { alert("Cadastro realizado com sucesso!"); navigate('/login?tipo=psicologo'); } 
+        else alert(data.erro || "Erro ao cadastrar.");
+    } catch (err) { alert("Erro de conexão.", err); }
+  };
 
   return (
-    <div className="container">
-      <Link to="/" className="back-link">
-        <FaArrowLeft /> Voltar para login
-      </Link>
+    <div className="page-wrapper">
+      <div className="container-custom">
+        
+        <div className="nav-header">
+          <div className="btn-back" onClick={() => navigate('/login?tipo=psicologo')}>
+            <FaArrowLeft /> <span>Voltar para login</span>
+          </div>
+          <div className="logo-box"><FaBrain /></div>
+        </div>
 
-      <header className="header">
-        <FaBrain className="logo-icon" />
-        <h1>Cadastro de Psicólogo</h1>
-        <p>Preencha seus dados para começar a gerenciar sua agenda</p>
-      </header>
-
-      {!isSuccess ? (
-        <form className="form-container" onSubmit={handleSubmit}>
-          <h2>Criar Conta</h2>
-          <p className="form-subtitle">Preencha o formulário abaixo para criar sua conta</p>
-
-          <div className="form-grid">
-            <div className="form-group">
-              <label htmlFor="nome">Nome completo</label>
-              <input
-                type="text"
-                id="nome"
-                placeholder="ex. maria da silva"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="crp">CRP</label>
-              <input
-                type="text"
-                id="crp"
-                placeholder="00/0000"
-                value={crp}
-                onChange={(e) => setCrp(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="email">E-mail</label>
-              <input
-                type="email"
-                id="email"
-                placeholder="email@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="telefone">Telefone</label>
-              <input
-                type="tel"
-                id="telefone"
-                placeholder="(00) 9 9999-9999"
-                value={telefone}
-                onChange={(e) => setTelefone(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="senha">Senha</label>
-              <input
-                type="password"
-                id="senha"
-                placeholder="Digite sua senha"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="confirmarSenha">Confirmar senha</label>
-              <input
-                type="password"
-                id="confirmarSenha"
-                placeholder="Confirme sua senha"
-                value={confirmarSenha}
-                onChange={(e) => setConfirmarSenha(e.target.value)}
-                required
-              />
-            </div>
+        <div className="form-container-wide">
+          <div style={{textAlign:'center'}}>
+            <h1 className="page-headline">Cadastro de Psicólogo</h1>
+            <p className="page-subheadline">Preencha seus dados para começar a gerenciar sua agenda</p>
           </div>
 
-          {error && (
-            <div className="message-container error-message">
-              <p>{error}</p>
-            </div>
-          )}
+          <div className="card-auth">
+            <h2 style={{fontSize:'1.25rem', fontWeight:'600', marginBottom:'0.5rem'}}>Criar Conta</h2>
+            <p style={{fontSize:'0.875rem', color:'var(--text-muted)', marginBottom:'1.5rem'}}>Preencha o formulário abaixo para criar sua conta</p>
 
-          <button type="submit" className="submit-button" disabled={isLoading}>
-            {isLoading ? 'Cadastrando...' : 'Criar conta'}
-          </button>
-        </form>
-      ) : (
-        <div className="form-container message-container success-message">
-          <h2>Cadastro realizado com sucesso!</h2>
-          <p>Você será redirecionado para o login em instantes...</p>
+            <form onSubmit={handleSubmit}>
+              <div className="form-grid">
+                <div>
+                  <label className="input-label">Nome completo</label>
+                  <input className="input-field" placeholder="ex. Maria da Silva" required
+                         value={form.nome} onChange={e => setForm({...form, nome: e.target.value})} />
+                </div>
+                <div>
+                  <label className="input-label">CRP</label>
+                  <input className="input-field" placeholder="00/0000" required
+                         value={form.crp} onChange={e => setForm({...form, crp: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="form-grid">
+                <div>
+                  <label className="input-label">E-mail</label>
+                  <input type="email" className="input-field" placeholder="email@gmail.com" required
+                         value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                </div>
+                <div>
+                  <label className="input-label">Telefone</label>
+                  <input className="input-field" placeholder="(88) 9 9999-9999" required
+                         value={form.telefone} onChange={e => setForm({...form, telefone: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="form-grid">
+                <div>
+                  <label className="input-label">Senha</label>
+                  <input type="password" className="input-field" placeholder="••••••••" required
+                         value={form.senha} onChange={e => setForm({...form, senha: e.target.value})} />
+                </div>
+                <div>
+                  <label className="input-label">Confirmar senha</label>
+                  <input type="password" className="input-field" placeholder="••••••••" required
+                         value={form.confirmSenha} onChange={e => setForm({...form, confirmSenha: e.target.value})} />
+                </div>
+              </div>
+
+              <button type="submit" className="btn-primary-full">Criar conta</button>
+            </form>
+          </div>
         </div>
-      )}
+
+      </div>
     </div>
   );
 }
-
-export default CadastroPsicologo;

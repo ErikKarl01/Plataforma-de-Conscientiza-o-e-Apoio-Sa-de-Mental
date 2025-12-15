@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+.landing-page {
+  /* Cores baseadas no globals.css do v0 */
+  --primary: #358C86;        /* Teal */
+  --primary-foreground: #FFFFFF;
+  --secondary: #FDE047;      /* Yellow-300/400 para o CTA */
+  --secondary-foreground: #422006;
+  --destructive: #EF4444;    /* Red */
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --background: #FFFFFF;
+  --foreground: #0F172A;     /* Slate 900 */
+  --border: #E2E8F0;
+  --radius: 0.5rem;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+* { box-sizing: border_box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+body { background-color: var(--background); color: var(--foreground); overflow-x: hidden; }
+
+/* --- HEADER --- */
+.header-sticky {
+  position: sticky; top: 0; z-index: 50; width: 100%;
+  background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.header-container {
+  max-width: 1280px; margin: 0 auto; height: 4rem; padding: 0 1.5rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo-box { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit; }
+.logo-circle { 
+  height: 2.5rem; width: 2.5rem; background: rgba(53, 140, 134, 0.1); 
+  color: var(--primary); display: flex; align-items: center; justify-content: center; 
+  border-radius: 50%; 
+}
+.nav-menu { display: none; gap: 2rem; } /* Mobile first: oculto */
+@media(min-width: 768px) { .nav-menu { display: flex; } }
+
+.nav-link { 
+  font-size: 0.875rem; font-weight: 500; color: var(--foreground); opacity: 0.8;
+  text-decoration: none; transition: 0.2s; 
+}
+.nav-link:hover { opacity: 1; color: var(--primary); }
+.btn-login {
+  background: var(--primary); color: white; padding: 0.5rem 1rem;
+  border-radius: var(--radius); font-weight: 500; font-size: 0.875rem;
+  border: none; cursor: pointer; transition: 0.2s;
+}
+.btn-login:hover { opacity: 0.9; }
+
+/* --- HERO SECTION --- */
+.hero {
+  position: relative; padding: 8rem 0; min-height: 600px;
+  display: flex; align-items: center; color: white;
+  background-size: cover; background-position: center;
+  background-image: linear-gradient(to right, rgba(0,0,0,0.6), rgba(0,0,0,0.3)), 
+                    url('https://images.unsplash.com/photo-1544027993-37dbfe43562a?q=80&w=2070&fit=crop');
+}
+.container { max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; position: relative; z-index: 10; }
+.hero h1 {
+  font-size: 3rem; font-weight: 800; line-height: 1.1; margin-bottom: 1.5rem; max-width: 800px;
+}
+.hero p {
+  font-size: 1.125rem; line-height: 1.6; max-width: 650px; color: rgba(255,255,255,0.9);
+}
+@media(min-width: 768px) { .hero h1 { font-size: 4rem; } }
+
+/* --- SEÇÕES GERAIS --- */
+.section-py { padding: 5rem 0; }
+.bg-muted { background-color: #F8FAFC; }
+.text-center { text-align: center; }
+.section-title { font-size: 2.25rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.02em; }
+.section-desc { color: var(--muted-foreground); max-width: 700px; margin: 0 auto 3rem auto; line-height: 1.6; }
+
+/* --- GRID CARDS (Events & Knowledge) --- */
+.grid-cards {
+  display: grid; grid-template-columns: 1fr; gap: 1.5rem;
+}
+@media(min-width: 768px) { .grid-cards { grid-template-columns: repeat(2, 1fr); } }
+@media(min-width: 1024px) { .grid-cards { grid-template-columns: repeat(3, 1fr); } }
+
+.card {
+  background: white; border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  transition: transform 0.3s; cursor: pointer; height: 100%;
+}
+.card:hover { transform: translateY(-5px); }
+.card-image-box { position: relative; aspect-ratio: 4/3; overflow: hidden; }
+.card-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+.card:hover .card-img { transform: scale(1.05); }
+.card-gradient {
+  position: absolute; inset: 0; 
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 50%, transparent 100%);
+}
+.badge {
+  position: absolute; top: 1rem; left: 1rem; padding: 0.25rem 0.75rem;
+  border-radius: 9999px; font-size: 0.75rem; font-weight: 600; color: white; z-index: 2;
+}
+.badge-pink { background-color: #EC4899; }
+.badge-primary { background-color: var(--primary); }
+.badge-destructive { background-color: var(--destructive); }
+
+.card-content-absolute {
+  position: absolute; bottom: 0; left: 0; right: 0; padding: 1.5rem; color: white; z-index: 2;
+}
+.card-title { font-weight: 600; font-size: 1rem; line-height: 1.4; margin-bottom: 0.25rem; }
+.card-sub { font-size: 0.75rem; opacity: 0.9; }
+
+/* --- CALL TO ACTION (Amarelo) --- */
+.cta-section {
+  background-color: var(--secondary); padding: 6rem 0; position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+}
+.cta-texture {
+  position: absolute; inset: 0; opacity: 0.15;
+  background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png'); 
+  background-size: cover;
+}
+.cta-text {
+  position: relative; font-size: 2.5rem; font-weight: 900; 
+  color: var(--secondary-foreground); text-transform: uppercase; letter-spacing: -0.02em;
+}
+@media(min-width: 768px) { .cta-text { font-size: 4rem; } }
+
+/* --- CONSULTATION --- */
+.consult-box { max-width: 700px; margin: 0 auto; text-align: center; }
+.consult-border-title {
+  display: inline-block; border: 2px solid var(--foreground); padding: 0.75rem 2rem;
+  border-radius: 0.5rem; margin-bottom: 2rem;
+}
+.consult-h2 { font-size: 1.8rem; font-weight: 700; }
+.consult-text { color: var(--muted-foreground); margin-top: 1rem; line-height: 1.6; }
+
+/* --- FOOTER --- */
+.footer { background-color: var(--foreground); color: white; padding: 4rem 0 2rem; }
+.footer-grid {
+  display: grid; grid-template-columns: 1fr; gap: 3rem; margin-bottom: 3rem;
+}
+@media(min-width: 768px) { .footer-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.footer h3 { font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem; color: white; }
+.footer ul { list-style: none; }
+.footer li { margin-bottom: 0.5rem; }
+.footer a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.875rem; transition: 0.2s; }
+.footer a:hover { color: white; }
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem; 
+  text-align: center; font-size: 0.875rem; color: rgba(255,255,255,0.5);
+}

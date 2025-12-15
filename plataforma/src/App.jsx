@@ -1,32 +1,37 @@
-import { Routes, Route } from 'react-router-dom';
-import Home from './components/Home';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import './style.css'; // Importa o estilo global (Verde)
+
+// Componentes
+import LandingPage from './components/LandingPage';
+import EscolhaPerfil from './components/EscolhaPerfil';
 import Login from './components/Login';
-import CadastroSelecao from './components/CadastroSelecao';
-import CadastroPsicologo from './components/CadastroPsicologo';
 import CadastroAluno from './components/CadastroAluno';
-import PortalAgendas from './components/PortalAgenda';
-import PortalAluno from './components/PortalAluno'; // Portal do Aluno
+import CadastroPsicologo from './components/CadastroPsicologo';
+import PortalAluno from './components/PortalAluno';
+import PortalAgenda from './components/PortalAgenda';
 
 function App() {
   return (
-    <Routes>
-      {/* Página inicial */}
-      <Route path="/" element={<Home />} />
+    <Router>
+      <Routes>
+        {/* Tela Inicial */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Fluxo de Entrada */}
+        <Route path="/escolha-perfil" element={<EscolhaPerfil />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/cadastro-aluno" element={<CadastroAluno />} />
+        <Route path="/cadastro-psicologo" element={<CadastroPsicologo />} />
+        
+        {/* Portais (Área Logada) */}
+        <Route path="/portal-aluno" element={<PortalAluno />} />
+        <Route path="/portal-psicologo" element={<PortalAgenda />} />
 
-      {/* Seleção de cadastro */}
-      <Route path="/selecao" element={<CadastroSelecao />} />
-
-      {/* Cadastros */}
-      <Route path="/cadastro-psicologo" element={<CadastroPsicologo />} />
-      <Route path="/cadastro-aluno" element={<CadastroAluno />} />
-
-      {/* Portais (Áreas Logadas) */}
-      <Route path="/agenda" element={<PortalAgendas />} /> {/* Psicólogo */}
-      <Route path="/portal-aluno" element={<PortalAluno />} /> {/* Aluno */}
-
-      {/* Login */}
-      <Route path="/login" element={<Login />} />
-    </Routes>
+        {/* Rota de segurança (qualquer erro volta pro início) */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 }
 

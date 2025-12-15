@@ -1,129 +1,98 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FaBrain, FaArrowLeft, FaEnvelope, FaLock } from 'react-icons/fa6'; 
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { FaBrain, FaArrowLeft, FaEnvelope, FaLock } from 'react-icons/fa';
 
-// URL API
-const API_URL = 'http://127.0.0.1:5000'; 
+const API_URL = 'http://127.0.0.1:5000';
 
-function Login() {
+export default function Login() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const tipoParam = searchParams.get('tipo'); 
+
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [error, setError] = useState(null);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError(null);
-
-    if (!email || !senha) {
-      setError("Por favor, preencha todos os campos.");
-      return;
-    }
-
+    setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/login`, { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${API_URL}/login`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, senha })
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.mensagem || 'Erro ao fazer login.');
-      }
-
-      // Login bem-sucedido
-      if (data.usuario && data.tipo) {
-        sessionStorage.setItem('tipoUsuario', data.tipo);
-
-        if (data.tipo === 'psicologo') {
-          // Psicólogo
-          localStorage.setItem("idPsicologo", data.usuario.id); 
-          localStorage.removeItem("dadosAluno"); // Limpa dados antigos se houver
-          navigate('/agenda');
-          window.location.reload();
-        } else {
-          // Estudante
-          localStorage.setItem("dadosAluno", JSON.stringify(data.usuario));
-          localStorage.removeItem("idPsicologo"); // Limpa id de psicólogo se houver
-          navigate('/portal-aluno'); // Redireciona para portal do aluno
+      const data = await res.json();
+      
+      if (res.ok) {
+        if (data.tipo === 'estudante') {
+            localStorage.setItem("dadosAluno", JSON.stringify(data.usuario));
+            navigate('/portal-aluno');
+        } else if (data.tipo === 'psicologo') {
+            localStorage.setItem("idPsicologo", data.usuario.id);
+            navigate('/portal-psicologo');
         }
       } else {
-        setError('Resposta inválida do servidor.');
+        alert(data.erro || "Falha no login. Verifique as credenciais.");
       }
+    } catch (err) { alert("Erro de conexão com o servidor.", err); } 
+    finally { setLoading(false); }
+  };
 
-    } catch (err) {
-      setError(err.message);
-    }
+  const irParaCadastro = () => {
+      if(tipoParam === 'psicologo') navigate('/cadastro-psicologo');
+      else navigate('/cadastro-aluno');
   };
 
   return (
-    <div className="container">
-      <Link to="/" className="back-link">
-        <FaArrowLeft /> Voltar para home
-      </Link>
-
-      <div className="header">
-        <FaBrain className="logo-icon" />
-        <h1>Portal de Atendimento</h1>
-        <p>Gerenciamento dos atendimentos</p>
-      </div>
-
-      <div className="form-container">
-        <div className="login-intro">
-          <h2>Entrar</h2>
-          <p className="form-subtitle">Digite suas credenciais para acessar</p>
+    <div className="page-wrapper">
+      <div className="container-custom">
+        
+        <div className="nav-header">
+          <div className="btn-back" onClick={() => navigate('/escolha-perfil')}>
+            <FaArrowLeft /> <span>Voltar</span>
+          </div>
+          <div className="logo-box"><FaBrain /></div>
         </div>
 
-        <form onSubmit={handleLogin}>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <div className="input-with-icon">
-              <FaEnvelope className="input-icon" />
-              <input
-                type="email"
-                id="email"
-                placeholder="nome@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+        <div className="form-container-narrow">
+          <h1 className="page-headline">Login</h1>
+          <p className="page-subheadline">Gerenciamento dos atendimentos</p>
+
+          <div className="card-auth">
+            <h2 style={{fontSize:'1.25rem', fontWeight:'600', marginBottom:'0.5rem'}}>Entrar</h2>
+            <p style={{fontSize:'0.875rem', color:'var(--text-muted)', marginBottom:'1.5rem'}}>Digite suas credenciais para acessar</p>
+
+            <form onSubmit={handleLogin}>
+              <div className="input-group">
+                <label className="input-label">Email</label>
+                <div className="input-wrapper">
+                  <FaEnvelope className="input-icon-left" />
+                  <input type="email" className="input-field with-icon" required
+                         value={email} onChange={e => setEmail(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Senha</label>
+                <div className="input-wrapper">
+                  <FaLock className="input-icon-left" />
+                  <input type="password" className="input-field with-icon" required
+                         value={senha} onChange={e => setSenha(e.target.value)} />
+                </div>
+              </div>
+
+              <button type="submit" className="btn-primary-full" disabled={loading}>
+                {loading ? 'Entrando...' : 'Entrar'}
+              </button>
+            </form>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="senha">Senha</label>
-            <div className="input-with-icon">
-              <FaLock className="input-icon" />
-              <input
-                type="password"
-                id="senha"
-                placeholder="**********"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                required
-              />
-            </div>
-          </div>
+          <p style={{textAlign:'center', marginTop:'1.5rem', color:'var(--text-muted)'}}>
+            Ainda não tem cadastro? <span className="text-link" onClick={irParaCadastro}>Cadastre-se</span>
+          </p>
+        </div>
 
-          {error && (
-            <div className="message-container error-message">
-              <p>{error}</p>
-            </div>
-          )}
-
-          <button type="submit" className="submit-button">
-            Entrar
-          </button>
-        </form>
       </div>
-
-      <p className="cadastro-link-text">
-        Ainda não tem cadastro? <Link to="/selecao" className="link-highlight">Cadastre-se</Link>
-      </p>
     </div>
   );
 }
-
-export default Login;

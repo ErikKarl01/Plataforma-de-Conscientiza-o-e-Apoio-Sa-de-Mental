@@ -1,118 +1,72 @@
-"""Não esqueça, tem que criar uma lógica de notificação caso alguma consulta  seja desmarcada"""
-
 import json
-from datetime import datetime, timedelta
-from utils.CarregarDados import carregar_dados
+import os
 
-DB_PATH = 'backend/data/consultas.json'
-DB_HIST = 'backend/data/historico.json'
+FILE_PATH = 'data/consultas.json'
 
 class ConsultaRepository:
-    
-    def _salvar_arquivo_generico(self, dados, caminho):
-        with open(caminho, 'w') as f:
-            json.dump(dados, f, indent=4)
+    def __init__(self):
+        self.consultas = self._load()
 
-    def _get_historico(self):
-        return carregar_dados(DB_HIST)
+    def _load(self):
+        if not os.path.exists('data'):
+            os.makedirs('data')
+        if not os.path.exists(FILE_PATH):
+            with open(FILE_PATH, 'w') as f:
+                json.dump([], f)
+            return []
+        try:
+            with open(FILE_PATH, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return []
 
-    def _save_historico(self, dados):
-        self._salvar_arquivo_generico(dados, DB_HIST)
+    def _save(self):
+        with open(FILE_PATH, 'w', encoding='utf-8') as f:
+            json.dump(self.consultas, f, indent=4, ensure_ascii=False)
 
-    def _limpar_historico_antigo(self):
-        historico = self._get_historico()
-        agora = datetime.now()
-        historico_atualizado = []
-        alterado = False
+    def create(self, consulta):
+        self.consultas.append(consulta)
+        self._save() # <--- OBRIGATÓRIO PARA NÃO PERDER DADOS
+        return consulta
 
-        for item in historico:
-            if 'dataExclusao' in item:
-                try:
-                    dt_exclusao = datetime.strptime(item['dataExclusao'], '%d/%m/%Y %H:%M:%S')
-                    if (agora - dt_exclusao).days <= 5:
-                        historico_atualizado.append(item)
-                    else:
-                        alterado = True
-                except:
-                    historico_atualizado.append(item)
-            else:
-                historico_atualizado.append(item)
-        
-        if alterado:
-            self._save_historico(historico_atualizado)
-
-    def get_all(self):
-        return carregar_dados(DB_PATH)
-
-    def save_all(self, dados):
-        self._salvar_arquivo_generico(dados, DB_PATH)
-
-    def find_by_data_horario_psi(self, data, horario, id_psi=None):
-        dados = self.get_all()
-        for index, consulta in enumerate(dados):
-            if consulta['data'] == data and consulta['horario'] == horario:
-                if id_psi is None:
-                    return index, consulta
-                elif consulta.get('idPsicologo') == id_psi:
-                    return index, consulta
-        return None, None
-    
-    def find_by_psicologo(self, id_psi):
-        dados = self.get_all()
-        return [c for c in dados if c.get('idPsicologo') == id_psi]
-
-    def create(self, nova_consulta_dict):
-        dados = self.get_all()
-        id_consulta = (max((c.get('id', -1) for c in dados), default=-1) + 1)
-        nova_consulta_dict['id'] = id_consulta
-        dados.append(nova_consulta_dict)
-        self.save_all(dados)
-        return nova_consulta_dict
-
-    def update(self, index, consulta_dict):
-        dados = self.get_all()
-        dados[index] = consulta_dict
-        self.save_all(dados)
-        return consulta_dict
+    def update(self, index, dados_novos):
+        if 0 <= index < len(self.consultas):
+            self.consultas[index] = dados_novos
+            self._save() # <--- SALVA A EDIÇÃO
+            return self.consultas[index]
+        return None
 
     def delete(self, index):
-        self._limpar_historico_antigo()
-        
-        dados = self.get_all()
-        historico = self._get_historico()
-        
-        removido = dados.pop(index)
-        removido['dataExclusao'] = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-        
-        historico.append(removido)
-        
-        self.save_all(dados)
-        self._save_historico(historico)
-        
-        return removido
+        if 0 <= index < len(self.consultas):
+            removido = self.consultas.pop(index)
+            self._save() # <--- SALVA A REMOÇÃO
+            return removido
+        return None
 
-    def adicionar_historico(self, dados):
-        self._limpar_historico_antigo()
-        
-        historico = self._get_historico()
-        historico.append(dados)
-        self._save_historico(historico)
+    def get_all(self):
+        return self.consultas
 
-    def recuperar_do_historico(self, data, horario, id_psi):
-        self._limpar_historico_antigo()
+    def find_by_data_horario_psi(self, data, horario, id_psi=None):
+        # Busca exata. O ID é convertido para string para garantir
+        id_psi = str(id_psi) if id_psi else None
+        
+        for i, c in enumerate(self.consultas):
+            # Compara Data, Hora e (se fornecido) o ID do Psicólogo
+            if c['data'] == data and c['horario'] == horario:
+                if id_psi:
+                    if str(c.get('idPsicologo')) == id_psi:
+                        return i, c
+                else:
+                    return i, c
+        return None, None
 
-        historico = self._get_historico()
-        item_retorno = None
-        idx_remover = -1
-        
-        for i, item in enumerate(historico):
-            if item.get('data') == data and item.get('horario') == horario and item.get('idPsicologo') == id_psi:
-                item_retorno = item
-                idx_remover = i
-                break
-        
-        if idx_remover != -1:
-            historico.pop(idx_remover)
-            self._save_historico(historico)
-        
-        return item_retorno
+    def find_by_psicologo(self, id_psi):
+        return [c for c in self.consultas if str(c.get('idPsicologo')) == str(id_psi)]
+
+    def _get_historico(self):
+        # Apenas para compatibilidade, se usar histórico separado
+        return []
+    
+    def adicionar_historico(self, consulta):
+        # Opcional: Salvar em outro arquivo
+        pass

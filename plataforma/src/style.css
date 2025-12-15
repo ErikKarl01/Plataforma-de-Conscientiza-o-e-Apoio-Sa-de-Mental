@@ -1,0 +1,227 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* --- CORES TRADUZIDAS DO DESIGN V0 (OKLCH -> HEX) --- */
+  
+  /* Background: oklch(0.965 0.01 180) */
+  --bg-page: #E8F2F0; 
+  
+  /* Primary: oklch(0.46 0.08 180) */
+  --primary: #3D8B7D;
+  --primary-hover: #2F7065; 
+  --primary-light: #C8E6E1; /* Fundo do ícone */
+  
+  /* Foreground/Text */
+  --text-main: #111827;
+  --text-muted: #6B7280;
+  
+  /* UI Elements */
+  --white: #ffffff;
+  --border-color: #E5E7EB;
+  --radius: 0.5rem; /* 8px conforme o design */
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+* { box-sizing: border_box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
+body { 
+  background-color: var(--bg-page); 
+  color: var(--text-main); 
+  -webkit-font-smoothing: antialiased; 
+}
+
+/* --- ESTRUTURA --- */
+.page-wrapper {
+  min-height: 100vh; 
+  display: flex; 
+  flex-direction: column;
+}
+
+.container-custom {
+  max-width: 1200px; 
+  margin: 0 auto; 
+  width: 100%; 
+  padding: 2rem 1rem;
+}
+
+/* --- HEADER --- */
+.nav-header {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 3rem;
+}
+
+.btn-back {
+  display: flex; 
+  align-items: center; 
+  gap: 0.5rem; 
+  color: var(--text-muted); /* Na imagem era cinza */
+  text-decoration: none; 
+  font-weight: 500; 
+  cursor: pointer; 
+  transition: color 0.2s;
+}
+.btn-back:hover { color: var(--text-main); }
+
+.logo-box {
+  width: 4rem; 
+  height: 4rem; 
+  background-color: var(--primary-light); /* Verde bem claro */
+  border-radius: 1rem; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  color: var(--primary); 
+  font-size: 2rem;
+}
+
+/* --- TEXTOS --- */
+.page-headline {
+  font-size: 2.25rem; 
+  font-weight: 700; 
+  color: var(--text-main); 
+  margin-bottom: 0.5rem; 
+  text-align: center;
+}
+
+.page-subheadline {
+  color: var(--text-muted); 
+  margin-bottom: 3rem; 
+  text-align: center; 
+  font-size: 1rem;
+}
+
+/* --- CARDS (Branco com borda suave) --- */
+.card-auth {
+  background: var(--white); 
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color); 
+  padding: 2rem;
+  box-shadow: var(--shadow); 
+  width: 100%;
+}
+
+/* --- GRID DE SELEÇÃO (Aluno vs Psicólogo) --- */
+.profile-grid {
+  display: grid; 
+  grid-template-columns: 1fr; 
+  gap: 2rem; 
+  max-width: 800px; 
+  margin: 0 auto;
+}
+@media (min-width: 768px) { 
+  .profile-grid { grid-template-columns: 1fr 1fr; } 
+}
+
+.profile-card {
+  background: var(--white); 
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius); 
+  padding: 3rem 1rem; 
+  cursor: pointer;
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 1.5rem;
+  transition: all 0.2s ease;
+}
+.profile-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
+  transform: translateY(-4px); 
+  border-color: var(--primary-light);
+}
+
+.profile-icon { 
+  font-size: 5rem; 
+  color: var(--primary); 
+}
+.profile-title { 
+  font-size: 1.5rem; 
+  font-weight: 600; 
+  color: var(--text-main); 
+}
+
+/* --- FORMULÁRIOS --- */
+.form-container-narrow { max-width: 450px; margin: 0 auto; } /* Login */
+.form-container-wide { max-width: 800px; margin: 0 auto; }   /* Cadastro */
+
+.form-grid { 
+  display: grid; 
+  grid-template-columns: 1fr; 
+  gap: 1rem; 
+  margin-bottom: 1rem; 
+}
+@media (min-width: 640px) { 
+  .form-grid { grid-template-columns: 1fr 1fr; } 
+}
+
+.input-group { margin-bottom: 1rem; }
+
+.input-label {
+  display: block; 
+  font-size: 0.875rem; 
+  font-weight: 500; 
+  color: var(--text-main); 
+  margin-bottom: 0.5rem;
+}
+
+/* Input Wrapper (Para ícone dentro) */
+.input-wrapper { position: relative; }
+
+.input-icon-left {
+  position: absolute; 
+  left: 0.75rem; 
+  top: 50%; 
+  transform: translateY(-50%);
+  color: #9CA3AF; /* Placeholder gray */
+  pointer-events: none;
+}
+
+.input-field {
+  width: 100%; 
+  padding: 0.75rem 1rem; 
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color); 
+  background: var(--white); 
+  outline: none;
+  font-size: 0.95rem; 
+  color: var(--text-main);
+  transition: border-color 0.2s;
+}
+
+/* Classe especial para quando tem ícone à esquerda */
+.input-field.with-icon { padding-left: 2.5rem; }
+
+.input-field:focus {
+  border-color: var(--primary); 
+  box-shadow: 0 0 0 3px rgba(61, 139, 125, 0.1); /* Ring suave teal */
+}
+
+/* --- BOTÕES --- */
+.btn-primary-full {
+  width: 100%; 
+  background-color: var(--primary); 
+  color: var(--white);
+  padding: 0.75rem; 
+  border-radius: var(--radius); 
+  font-weight: 500; 
+  font-size: 1rem;
+  border: none; 
+  cursor: pointer; 
+  transition: background 0.2s; 
+  margin-top: 1.5rem;
+}
+.btn-primary-full:hover { 
+  background-color: var(--primary-hover); 
+}
+
+.text-link { 
+  color: var(--text-main); 
+  text-decoration: underline; 
+  cursor: pointer; 
+  font-weight: 500;
+}
+.text-link:hover { 
+  color: var(--primary); 
+}

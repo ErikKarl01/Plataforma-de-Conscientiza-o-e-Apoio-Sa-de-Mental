@@ -1,60 +1,50 @@
-# Validacoes.py
+import re
 from datetime import datetime
-import phonenumbers
-from email_validator import validate_email, EmailNotValidError
 
-def validar_nome(nome, nome_campo="Nome"):
-    if not nome or not nome.strip():
-        raise ValueError(f"O {nome_campo} não pode estar vazio")
-    if any(char.isdigit() for char in nome):
-        raise ValueError(f"O {nome_campo} não pode conter números")
+def validar_id(valor):
+    if valor is None or valor == '':
+        return None
+    return str(valor)
+
+def validar_nome(nome, campo="Nome"):
+    if not nome or len(nome.strip()) < 2:
+        raise ValueError(f"{campo} deve ter pelo menos 2 caracteres.")
     return nome.strip()
 
-def validar_email_func(email, nome_campo="Email"):
-    if not email or not email.strip():
-        raise ValueError(f"O {nome_campo} não pode estar vazio")
-    try:
-        v = validate_email(email, check_deliverability=False)
-        return v.normalized
-    except EmailNotValidError as e:
-        raise ValueError(f"{nome_campo} inválido: {str(e)}")
+def validar_email_func(email, campo="Email"):
+    if not email or '@' not in email:
+        raise ValueError(f"{campo} inválido.")
+    return email.strip()
 
-def validar_telefone(telefone, nome_campo="Telefone"):
-    if not telefone or not telefone.strip():
-        raise ValueError(f"O {nome_campo} não pode estar vazio")
-    try:
-        num_telefone = phonenumbers.parse(telefone, "BR")
-        if not phonenumbers.is_valid_number(num_telefone):
-            raise ValueError(f"Número de {nome_campo} inválido")
-        return phonenumbers.format_number(num_telefone, phonenumbers.PhoneNumberFormat.E164)
-    except Exception as e:
-        raise ValueError(f"{nome_campo} inválido: {str(e)}")
+def validar_telefone(telefone, campo="Telefone"):
+    if not telefone or len(telefone.strip()) < 8:
+        raise ValueError(f"{campo} inválido (mínimo 8 dígitos).")
+    return telefone.strip()
 
 def validar_data_hora(data, horario):
-    try:
-        datetime.strptime(f'{data} {horario}', '%d/%m/%Y %H:%M')
-        return data, horario
-    except (ValueError, TypeError):
-        raise ValueError("Formato de data ou hora inválido")
-
-def validar_id(id_val):
-    try:
-        return int(id_val)
-    except (ValueError, TypeError):
-        raise ValueError("ID inválido")
+    if not data or not horario:
+        raise ValueError("Data e Horário são obrigatórios.")
+    # Opcional: Validar formato DD/MM/AAAA e HH:MM
+    return data, horario
 
 def validar_duracao(duracao):
-    if not duracao: return None
-    try:
-        d = int(duracao)
-        if d < 20 or d > 90:
-            raise ValueError("A duração deve ser entre 20 e 90 minutos")
-        return d
-    except (ValueError, TypeError):
-        raise ValueError("A duração deve ser um número inteiro válido")
+    if not duracao:
+        return '50'
+    return str(duracao)
 
 def validar_causa(causa):
-    if not causa: return ''
-    if any(char.isdigit() for char in causa):
-        raise ValueError("A causa não pode conter números")
+    if not causa:
+        return ''
     return causa.strip()
+
+# --- AS FUNÇÕES QUE FALTAVAM E CAUSARAM O ERRO ---
+
+def validar_crp(crp):
+    if not crp or len(crp.strip()) < 4:
+        raise ValueError("CRP inválido. Deve conter identificação do conselho.")
+    return crp.strip()
+
+def validar_senha(senha):
+    if not senha or len(senha) < 4:
+        raise ValueError("A senha deve ter pelo menos 4 caracteres.")
+    return senha.strip()

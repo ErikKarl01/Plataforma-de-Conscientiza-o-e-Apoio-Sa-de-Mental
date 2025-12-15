@@ -1,19 +1,24 @@
 from flask import Flask
-from flask_cors import CORS
-import os
+from flask_cors import CORS # <--- 1. Importação necessária
 
-from controllers.AuthController import auth_bp
+# Importação dos Controllers (Blueprints)
 from controllers.EstudanteController import estudante_bp
 from controllers.PsicologoController import psicologo_bp
+from controllers.LoginController import login_bp
+# Se tiver outros controllers (como ConsultaController), importe aqui também
+# from controllers.ConsultaController import consulta_bp 
 
 app = Flask(__name__)
-CORS(app) 
 
-os.makedirs('backend/data', exist_ok=True)
+# <--- 2. Habilita CORS para todas as rotas e origens (*)
+# Isso permite que o Frontend (localhost:5173) fale com o Backend
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-app.register_blueprint(auth_bp)
+# Registro dos Blueprints
 app.register_blueprint(estudante_bp)
 app.register_blueprint(psicologo_bp)
+app.register_blueprint(login_bp)
+# app.register_blueprint(consulta_bp) # Descomente se tiver
 
 if __name__ == '__main__':
     app.run(debug=True)
