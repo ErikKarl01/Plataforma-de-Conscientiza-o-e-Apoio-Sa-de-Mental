@@ -15,7 +15,17 @@
         "data": "2026-01-01",
         "hora": "00:00",
         "duracao": 50,
-        "status": "pendente",
+        "status": "confirmado",
+        "idAluno": "1",
+        "nomeAluno": "ta"
+    },
+    {
+        "id": "3",
+        "idPsicologo": "1",
+        "data": "2025-12-15",
+        "hora": "18:00",
+        "duracao": 24,
+        "status": "confirmado",
         "idAluno": "1",
         "nomeAluno": "ta"
     }

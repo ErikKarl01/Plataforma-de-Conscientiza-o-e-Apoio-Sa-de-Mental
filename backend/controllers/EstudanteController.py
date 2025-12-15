@@ -54,3 +54,12 @@ def listar_todos_livres():
         return jsonify(livres), 200
     except Exception as e:
         return jsonify({'erro': str(e)}), 500
+    
+@estudante_bp.route('/remarcar_consulta_aluno', methods=['POST'])
+def remarcar():
+    data = request.get_json()
+    data['solicitante'] = 'aluno' # Define quem está pedindo
+    try:
+        service_consulta.remarcar_consulta(data)
+        return jsonify({'mensagem': 'Remarcado com sucesso'}), 200
+    except Exception as e: return jsonify({'erro': str(e)}), 400

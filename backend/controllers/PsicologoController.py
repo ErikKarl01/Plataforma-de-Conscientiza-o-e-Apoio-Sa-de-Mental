@@ -95,3 +95,12 @@ def remover_consulta():
         service_consulta.remover_fisicamente(data)
         return jsonify({'mensagem': 'Removido'}), 200
     except Exception as e: return jsonify({'erro': str(e)}), 400
+
+@psicologo_bp.route('/remarcar_consulta_psi', methods=['POST'])
+def remarcar():
+    data = request.get_json()
+    data['solicitante'] = 'psicologo'
+    try:
+        service_consulta.remarcar_consulta(data)
+        return jsonify({'mensagem': 'Remarcado com sucesso'}), 200
+    except Exception as e: return jsonify({'erro': str(e)}), 400
