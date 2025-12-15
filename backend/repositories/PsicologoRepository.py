@@ -1,6 +1,7 @@
 import json
 import os
 
+# NOME CORRETO: Plural e com ponto
 FILE_PATH = 'data/psicologos.json'
 
 class PsicologoRepository:
@@ -8,15 +9,18 @@ class PsicologoRepository:
         self._load()
 
     def _load(self):
-        if not os.path.exists('data'): os.makedirs('data')
+        if not os.path.exists('data'):
+            os.makedirs('data')
         if not os.path.exists(FILE_PATH):
-            with open(FILE_PATH, 'w') as f: json.dump([], f)
+            with open(FILE_PATH, 'w', encoding='utf-8') as f:
+                json.dump([], f)
     
     def get_all(self):
         try:
             with open(FILE_PATH, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        except: return []
+        except (FileNotFoundError, json.JSONDecodeError):
+            return []
 
     def create(self, psi):
         lista = self.get_all()

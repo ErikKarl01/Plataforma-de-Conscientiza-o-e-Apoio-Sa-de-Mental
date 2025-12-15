@@ -1,57 +1,28 @@
-from werkzeug.security import generate_password_hash
 from repositories.EstudanteRepository import EstudanteRepository
-from utils.Validacao import validar_nome, validar_email_func, validar_telefone, validar_id
 
 class EstudanteService:
     def __init__(self):
         self.repo = EstudanteRepository()
 
     def cadastrar(self, dados):
-        nome = validar_nome(dados.get('nome'))
-        email = validar_email_func(dados.get('email'))
-        telefone = validar_telefone(dados.get('telefone'))
-        senha = dados.get('senha')
+        # Validação simples para evitar erro 400 misterioso
+        if not dados.get('email') or '@' not in dados.get('email'):
+            raise ValueError("Email inválido")
+        if not dados.get('senha') or len(dados.get('senha')) < 3:
+            raise ValueError("Senha muito curta")
         
-        if not senha or not senha.strip():
-            raise ValueError("A senha não pode estar vazia")
+        # Verifica se já existe
+        todos = self.repo.get_all()
+        for a in todos:
+            if a['email'] == dados['email']:
+                raise ValueError("Email já cadastrado")
 
-        novo_usuario = {
-            'nome': nome, 
-            'email': email, 
-            'telefone': telefone,
-            'senha': generate_password_hash(senha.strip())
+        novo_aluno = {
+            'id': str(len(todos) + 1),
+            'nome': dados['nome'],
+            'email': dados['email'],
+            'senha': dados['senha'],
+            'telefone': dados.get('telefone', '')
         }
-        return self.repo.create(novo_usuario)
-
-    def editar(self, dados):
-        if not dados or 'id' not in dados:
-            raise ValueError('Id não fornecido')
-            
-        id_est = validar_id(dados['id'])
-        index, estudante = self.repo.find_by_id(id_est)
         
-        if not estudante:
-            return None
-        
-        estudante.update({
-            'nome': validar_nome(dados.get('nome')),
-            'email': validar_email_func(dados.get('email')),
-            'telefone': validar_telefone(dados.get('telefone'))
-        })
-        
-        return self.repo.update(index, estudante)
-
-    def excluir(self, dados):
-        if not dados or 'id' not in dados:
-            raise ValueError('Id não fornecido')
-            
-        id_est = validar_id(dados['id'])
-        index, estudante = self.repo.find_by_id(id_est)
-        
-        if not estudante:
-            return None
-            
-        return self.repo.delete(index)
-    
-    def buscar_por_nome_telefone(self, nome, telefone):
-        return self.repo.find_by_nome_telefone(nome.strip().lower(), telefone)
+        return self.repo.create(novo_aluno)

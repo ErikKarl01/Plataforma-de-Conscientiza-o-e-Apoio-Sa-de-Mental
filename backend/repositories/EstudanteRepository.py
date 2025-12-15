@@ -1,48 +1,34 @@
 import json
-from utils.CarregarDados import carregar_dados
+import os
 
-DB_PATH = 'data/estudante.json'
+# NOME CORRETO: Plural e com ponto
+FILE_PATH = 'data/estudantes.json'
 
 class EstudanteRepository:
-    def get_all(self):
-        return carregar_dados(DB_PATH)
+    def __init__(self):
+        self._load()
 
-    def save_all(self, dados):
-        with open(DB_PATH, 'w') as f:
-            json.dump(dados, f)
-
-    def find_by_id(self, id):
-        dados = self.get_all()
-        for index, estudante in enumerate(dados):
-            if estudante.get('id') == id:
-                return index, estudante
-        return None, None
+    def _load(self):
+        # Garante que a pasta existe
+        if not os.path.exists('data'):
+            os.makedirs('data')
+        
+        # Se o arquivo não existir, cria um array vazio []
+        if not os.path.exists(FILE_PATH):
+            with open(FILE_PATH, 'w', encoding='utf-8') as f:
+                json.dump([], f)
     
-    def find_by_nome_telefone(self, nome_norm, telefone):
-        dados = self.get_all()
-        for index, estudante in enumerate(dados):
-            if estudante.get('nome', '').strip().lower() == nome_norm and \
-               estudante.get('telefone', '') == telefone:
-                return index, estudante
-        return None, None
+    def get_all(self):
+        try:
+            with open(FILE_PATH, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            # Se der erro de leitura ou arquivo vazio, retorna lista vazia
+            return []
 
-    def create(self, novo_estudante_dict):
-        dados = self.get_all()
-        # Gera ID
-        novo_id = (max((u.get('id', -1) for u in dados), default=-1) + 1)
-        novo_estudante_dict['id'] = novo_id
-        dados.append(novo_estudante_dict)
-        self.save_all(dados)
-        return novo_estudante_dict
-
-    def update(self, index, dados_atualizados):
-        dados = self.get_all()
-        dados[index] = dados_atualizados
-        self.save_all(dados)
-        return dados_atualizados
-
-    def delete(self, index):
-        dados = self.get_all()
-        removido = dados.pop(index)
-        self.save_all(dados)
-        return removido
+    def create(self, aluno):
+        lista = self.get_all()
+        lista.append(aluno)
+        with open(FILE_PATH, 'w', encoding='utf-8') as f:
+            json.dump(lista, f, indent=4, ensure_ascii=False)
+        return aluno
